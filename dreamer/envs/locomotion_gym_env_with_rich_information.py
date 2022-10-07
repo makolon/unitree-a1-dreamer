@@ -16,8 +16,6 @@ import collections
 import pkgutil
 from collections import deque
 
-# import pybullet_utils.bullet_client as bullet_client
-
 
 _ACTION_EPS = 0.01
 _NUM_SIMULATION_ITERATION_STEPS = 300
@@ -160,7 +158,7 @@ class LocomotionGymEnv(gym.Env):
     if self._is_render:
       if self._record_video:
         self._pybullet_client = pybullet
-        self._pybullet_client .connect(
+        self._pybullet_client.connect(
           self._pybullet_client.GUI, options="--width=1280 --height=720 --mp4=\"test.mp4\" --mp4fps=100")
         self._pybullet_client.configureDebugVisualizer(
           self._pybullet_client.COV_ENABLE_SINGLE_STEP_RENDERING, 1)
@@ -321,7 +319,7 @@ class LocomotionGymEnv(gym.Env):
       self._pybullet_client.setPhysicsEngineParameter(
         numSolverIterations=self._num_bullet_solver_iterations)
       self._pybullet_client.setTimeStep(self._sim_time_step)
-      self._pybullet_client.setGravity(0, 0, -10)
+      self._pybullet_client.setGravity(0, 0, -9.81)
 
       # Loop over all env randomizers.
 

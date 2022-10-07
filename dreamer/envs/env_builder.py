@@ -128,7 +128,7 @@ def build_imitation_env(motion_files, num_parallel_envs, mode,
 
 def build_regular_env(robot_class,
                       motor_control_mode,
-                      enable_rendering=False,
+                      enable_rendering=True,
                       on_rack=False,
                       action_limit=(0.75, 0.75, 0.75),
                       wrap_trajectory_generator=True):
