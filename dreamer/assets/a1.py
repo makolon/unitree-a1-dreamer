@@ -23,6 +23,7 @@ from assets import laikago_constants
 import pybullet as pyb  # pytype: disable=import-error
 import numpy as np
 import re
+import copy
 import math
 import os
 import inspect
@@ -216,6 +217,56 @@ class A1(minitaur.Minitaur):
       reset_position_random_range=reset_position_random_range
     )
 
+  def Reset(self, reload_urdf=True, default_motor_angles=None, reset_time=3.0):
+    """Reset the minitaur to its initial states.
+
+    Args:
+      reload_urdf: Whether to reload the urdf file. If not, Reset() just place
+        the minitaur back to its starting position.
+      default_motor_angles: The default motor angles. If it is None, minitaur
+        will hold a default pose (motor angle math.pi / 2) for 100 steps. In
+        torque control mode, the phase of holding the default pose is skipped.
+      reset_time: The duration (in seconds) to hold the default motor angles. If
+        reset_time <= 0 or in torque control mode, the phase of holding the
+        default pose is skipped.
+    """
+    if reload_urdf:
+      self._LoadRobotURDF()
+      if self._on_rack:
+        self.rack_constraint = (self._CreateRackConstraint(
+          self._GetDefaultInitPosition(), self._GetDefaultInitOrientation()))
+      self._BuildJointNameToIdDict()
+      self._BuildUrdfIds()
+      self._RemoveDefaultJointDamping()
+      self._BuildMotorIdList()
+      self._RecordMassInfoFromURDF()
+      self._RecordInertiaInfoFromURDF()
+      self.ResetPose(add_constraint=True)
+    else:
+      position = self._GetDefaultInitPosition()
+      position = copy.deepcopy(position)
+      position[0] += (np.random.rand() * self.reset_position_random_range *
+                      2 - self.reset_position_random_range)
+      position[1] += (np.random.rand() * self.reset_position_random_range *
+                      2 - self.reset_position_random_range)
+      self._pybullet_client.resetBasePositionAndOrientation(
+        self.quadruped, position,
+        self._GetDefaultInitOrientation())
+      self._pybullet_client.resetBaseVelocity(self.quadruped, [0, 0, 0],
+                                              [0, 0, 0])
+      self.ResetPose(add_constraint=False)
+
+    self._overheat_counter = np.zeros(self.num_motors)
+    self._motor_enabled_list = [True] * self.num_motors
+    self._observation_history.clear()
+    self._step_counter = 0
+    self._state_action_counter = 0
+    self._is_safe = True
+    self._last_action = None
+    self._SettleDownForReset(default_motor_angles, reset_time)
+    if self._enable_action_filter:
+      self._ResetActionFilter()
+
   def _LoadRobotURDF(self):
     a1_urdf_path = self.GetURDFFile()
     if self._self_collision_enabled:
@@ -294,6 +345,40 @@ class A1(minitaur.Minitaur):
 
   def GetURDFFile(self):
     return self._urdf_filename
+
+  def _RecordMassInfoFromURDF(self):
+    """Records the mass information from the URDF file."""
+    self._base_mass_urdf = []
+    for chassis_id in self._chassis_link_ids:
+      self._base_mass_urdf.append(
+        self._pybullet_client.getDynamicsInfo(self.quadruped, chassis_id)[0])
+    self._leg_masses_urdf = []
+    for leg_id in self._leg_link_ids:
+      self._leg_masses_urdf.append(
+        self._pybullet_client.getDynamicsInfo(self.quadruped, leg_id)[0])
+    for motor_id in self._motor_link_ids:
+      self._leg_masses_urdf.append(
+        self._pybullet_client.getDynamicsInfo(self.quadruped, motor_id)[0])
+
+  def _RecordInertiaInfoFromURDF(self):
+    """Record the inertia of each body from URDF file."""
+    self._link_urdf = []
+    num_bodies = self._pybullet_client.getNumJoints(self.quadruped)
+    for body_id in range(-1, num_bodies):  # -1 is for the base link.
+      inertia = self._pybullet_client.getDynamicsInfo(self.quadruped,
+                                                      body_id)[2]
+      self._link_urdf.append(inertia)
+    # We need to use id+1 to index self._link_urdf because it has the base
+    # (index = -1) at the first element.
+    self._base_inertia_urdf = [
+      self._link_urdf[chassis_id + 1]
+      for chassis_id in self._chassis_link_ids
+    ]
+    self._leg_inertia_urdf = [
+      self._link_urdf[leg_id + 1] for leg_id in self._leg_link_ids
+    ]
+    self._leg_inertia_urdf.extend(
+      [self._link_urdf[motor_id + 1] for motor_id in self._motor_link_ids])
 
   def _BuildUrdfIds(self):
     """Build the link Ids from its name in the URDF file.

@@ -320,6 +320,7 @@ class LocomotionGymEnv(gym.Env):
         numSolverIterations=self._num_bullet_solver_iterations)
       self._pybullet_client.setTimeStep(self._sim_time_step)
       self._pybullet_client.setGravity(0, 0, -9.81)
+      self._pybullet_client.setRealTimeSimulation(True)
 
       # Loop over all env randomizers.
 
