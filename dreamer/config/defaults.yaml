@@ -18,8 +18,8 @@ defaults:
 
   # Features
   image_key: image
-  image_size: 128
-  image_channels: 4
+  image_size: 64
+  image_channels: 3
   image_categorical: False
   map_key:
   map_size: 11

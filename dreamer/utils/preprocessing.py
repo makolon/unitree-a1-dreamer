@@ -91,11 +91,7 @@ class Preprocessor:
         print_once('Preprocess batch (before): ', {k: v.shape + (v.dtype.name,) for k, v in batch.items()})
 
         # expand
-        # batch:  dict_keys(['policy_value', 'action_prob', 'policy_entropy', 'image', 'action', 'reset', 'terminal', 'reward'])
-        # batch: {'name': (batch_length, batch_size, 'float32), ...}
-        # batch (after): {'terminal': (15, 5, 'float32'), 'reset': (15, 5, 'bool'), 'image': (15, 5, 3, 64, 64, 'float32'), 'reward': (15, 5, 'float32'), 'action': (15, 5, 18, 'float32'), 'vecobs': (15, 5, 64, 'float32')}
 
-        print('batch (before): ', batch['image'].shape)
         if expandTB:
             batch = {k: v[np.newaxis, np.newaxis] for k, v in batch.items()}  # (*) => (T=1,B=1,*)
 
@@ -170,8 +166,6 @@ class Preprocessor:
             for key in ['image', 'action', 'map', 'map_coord', 'vecobs']:
                 if key in batch:
                     batch[key] = batch[key].astype(np.float16)
-
-        print('batch (after): ', batch['image'].shape)
 
         print_once('Preprocess batch (after): ', {k: v.shape + (v.dtype.name,) for k, v in batch.items()})
         return batch

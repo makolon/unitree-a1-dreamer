@@ -588,7 +588,7 @@ class LocomotionGymEnv(gym.Env):
 
       # TODO: change image size
       camera_image_set = self.pybullet_client.getCameraImage(
-        128, 128, viewMatrix=viewMat2, projectionMatrix=proj_mat,
+        64, 64, viewMatrix=viewMat2, projectionMatrix=proj_mat,
         # flags=pybullet.ER_NO_SEGMENTATION_MASK,
         shadow=1,
         lightDirection=[1, 1, 1],
@@ -662,7 +662,7 @@ class LocomotionGymEnv(gym.Env):
     for key, val in sensors_dict.items():
       obs_dict[key] = val
 
-    obs_dict['image'] = rgbd_img # (4, 128, 128)
+    obs_dict['image'] = rgbd_img[:, :, :3]
     return obs_dict
 
   def set_time_step(self, num_action_repeat, sim_step=0.001):
