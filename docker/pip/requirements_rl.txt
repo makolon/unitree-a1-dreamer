@@ -1,0 +1,7 @@
+###### Requirements without Version Specifiers ######
+tensorboard
+rltorch
+pytorch-rl
+tqdm
+
+###### Requirements with Version Specifiers ######

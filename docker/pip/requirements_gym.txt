@@ -1,0 +1,6 @@
+###### Requirements without Version Specifiers ######
+Box2d
+pygame
+
+
+###### Requirements with Version Specifiers ######

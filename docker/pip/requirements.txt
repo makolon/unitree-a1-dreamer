@@ -1,0 +1,25 @@
+###### Requirements without Version Specifiers ######
+flake8
+black
+matplotlib
+pyserial
+scikit-learn
+scikit-learn-intelex
+opencv-python
+sympy
+torch
+pybullet
+tqdm
+quadprog
+inputs
+numpy
+numba
+scikit-image
+gym
+attrs
+tensorflow
+tensorboard
+typing
+stable-baselines
+mlflow==1.22.0
+###### Requirements with Version Specifiers ######

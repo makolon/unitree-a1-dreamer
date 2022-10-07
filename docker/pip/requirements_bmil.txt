@@ -1,0 +1,14 @@
+###### Requirements without Version Specifiers ######
+sacred
+pyyaml
+tensorflow-gpu
+namedlist
+pyglet
+
+
+tensorboard
+rltorch
+pytorch-rl
+tqdm
+
+###### Requirements with Version Specifiers ######
