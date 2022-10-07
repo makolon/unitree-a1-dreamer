@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 import torch
 import torch.distributions as D
-
+import pybullet as p
 import sys
 sys.path.append('..')
 from envs import create_env
@@ -28,17 +28,15 @@ def main(env_id='MiniGrid-MazeS11N-v0',
 
     steps = 0
     while steps < num_steps:
-        # Unroll one episode
-        epsteps = 0
         obs = env.reset()
         done = False
         metrics = defaultdict(list)
 
         while not done:
             action, mets = policy(obs)
+            # action = np.zeros(12)
             obs, reward, done, inf = env.step(action)
             steps += 1
-            epsteps += 1
             for k, v in mets.items():
                 metrics[k].append(v)
 
