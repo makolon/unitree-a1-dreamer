@@ -50,6 +50,7 @@ class SimpleForwardTask(object):
     """
     rot_quat = env.robot.GetBaseOrientation()
     rot_mat = env.pybullet_client.getMatrixFromQuaternion(rot_quat)
+    # TODO: fix
     return rot_mat[-1] < 0.85
 
   def reward(self, env):

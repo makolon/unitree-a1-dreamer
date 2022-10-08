@@ -169,7 +169,7 @@ def main(argv):
 
   # Construct robot class:
   if FLAGS.use_real_robot:
-    from motion_imitation.robots import a1_robot
+    from robots import a1_robot
     robot = a1_robot.A1Robot(
         pybullet_client=p,
         motor_control_mode=robot_config.MotorControlMode.HYBRID,

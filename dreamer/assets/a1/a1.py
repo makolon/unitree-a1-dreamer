@@ -3,11 +3,12 @@ import time
 import pybullet_data as pd
 import numpy as np
 p.connect(p.GUI)
-p.setAdditionalSearchPath(pd.getDataPath())
+# p.setAdditionalSearchPath(pd.getDataPath())
+p.setAdditionalSearchPath('~/unitree-a1-dreamer/dreamer/assets')
 dt = 1./240.
 
 p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 0)
-p.loadURDF("plane.urdf")
+p.loadURDF("plane_implicit.urdf")
 robot = p.loadURDF("a1/a1.urdf", [0, 0, 0.5])
 p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
 p.setGravity(0, 0, -9.8)

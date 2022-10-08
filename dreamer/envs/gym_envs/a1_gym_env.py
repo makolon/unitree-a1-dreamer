@@ -11,7 +11,7 @@ class A1GymEnv(gym.Env):
 
   def __init__(self,
                action_limit=0.75,
-               render=True,
+               render=False,
                on_rack=False):
     self._env = env_builder.build_regular_env(
         robot_class=a1.A1,

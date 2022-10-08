@@ -187,7 +187,7 @@ class LocomotionGymEnv(gym.Env):
 
     self.pybullet_client.setAdditionalSearchPath(
       os.path.join(os.path.dirname(__file__), '../assets'))
-    self._pybullet_client.setAdditionalSearchPath(pd.getDataPath())
+    # self._pybullet_client.setAdditionalSearchPath(pd.getDataPath())
     # if gym_config.simulation_parameters.egl_rendering:
     #   self._pybullet_client.loadPlugin('eglRendererPlugin')
 
@@ -319,8 +319,8 @@ class LocomotionGymEnv(gym.Env):
       self._pybullet_client.setPhysicsEngineParameter(
         numSolverIterations=self._num_bullet_solver_iterations)
       self._pybullet_client.setTimeStep(self._sim_time_step)
-      self._pybullet_client.setGravity(0, 0, -9.81)
-      self._pybullet_client.setRealTimeSimulation(False)
+      self._pybullet_client.setGravity(0, 0, -9.8)
+      self._pybullet_client.setRealTimeSimulation(True)
 
       # Loop over all env randomizers.
 
@@ -581,7 +581,7 @@ class LocomotionGymEnv(gym.Env):
 
       # TODO: change image size
       camera_image_set = self.pybullet_client.getCameraImage(
-        64, 64, viewMatrix=viewMat2, projectionMatrix=proj_mat,
+        256, 256, viewMatrix=viewMat2, projectionMatrix=proj_mat,
         # flags=pybullet.ER_NO_SEGMENTATION_MASK,
         shadow=1,
         lightDirection=[1, 1, 1],

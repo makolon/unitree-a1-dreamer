@@ -11,6 +11,8 @@ import sys
 sys.path.append('..')
 from envs import create_env
 from utils.tools import *
+import matplotlib.pyplot as plt
+from utils.record_video import create_video
 
 def main(env_id='MiniGrid-MazeS11N-v0',
          policy='random',
@@ -22,24 +24,41 @@ def main(env_id='MiniGrid-MazeS11N-v0',
 
     # Env
     env = create_env(env_id, env_no_terminal, env_time_limit, env_action_repeat)
+    steps = 0
+    obs = env.reset()
+    done = False
+    metrics = defaultdict(list)
 
     # Policy
     policy = RandomPolicy(env.action_space)
 
-    steps = 0
-    while steps < num_steps:
-        obs = env.reset()
-        done = False
-        metrics = defaultdict(list)
+    # Camera
+    width = 256
+    height = 256
+    fov = 120
+    aspect = width / height
+    near = 0.02
+    far = 10
+    view_matrix = p.computeViewMatrix([1.75, 0, 1.0], [0, 0, 0], [0, 0, 1])
+    projection_matrix = p.computeProjectionMatrixFOV(fov, aspect, near, far)
 
-        while True:
-            action, mets = policy(obs)
-            action = np.array([0.21, -0.1157, 0, 0.21, 0.1157, 0,
-                -0.21, -0.1157, 0, -0.21, 0.1157, 0])
-            obs, reward, done, inf = env.step(action)
-            steps += 1
-            for k, v in mets.items():
-                metrics[k].append(v)
+    images = []
+    while True:
+        action, mets = policy(obs)
+        # action = np.array([0.21, -0.1157, 0, 0.21, 0.1157, 0,
+        #     -0.21, -0.1157, 0, -0.21, 0.1157, 0])
+        obs, reward, done, inf = env.step(action)
+        imgs = p.getCameraImage(width,
+                            height,
+                            view_matrix,
+                            projection_matrix)
+        _, _, img, _, _ = imgs
+        images.append(img)
+        steps += 1
+        print('steps: ', steps)
+        if steps > 500:
+            break
+    create_video(images)
 
 
 class RandomPolicy:

@@ -18,7 +18,7 @@ defaults:
 
   # Features
   image_key: image
-  image_size: 64
+  image_size: 256
   image_channels: 3
   image_categorical: False
   map_key:

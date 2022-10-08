@@ -1,8 +1,8 @@
 import re
 import numpy as np
 import pybullet as pyb
+import collections
 
-URDF_NAME = "a1/a1.urdf"
 START_POS = [0, 0, 0.32]
 
 
