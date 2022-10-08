@@ -29,8 +29,8 @@ import attr
 from gym import spaces
 import numpy as np
 
-from assets import laikago_pose_utils
-from assets import minitaur_pose_utils
+from robots import laikago_pose_utils
+from robots import minitaur_pose_utils
 
 class MinitaurPoseOffsetGenerator(object):
   """A trajectory generator that return a constant leg pose."""
