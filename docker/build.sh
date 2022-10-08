@@ -1,1 +1,1 @@
-docker build ./ -t unitree-a1-gym 
+docker build ./ -t unitree-a1-dreamer

@@ -15,4 +15,4 @@ docker run --rm \
   -e DOCKER_USER_ID=$(id -u) \
   -e DOCKER_USER_GROUP_NAME=$(id -gn) \
   -e DOCKER_USER_GROUP_ID=$(id -g) \
-  -it --name "unitree-a1-gym" unitree-a1-gym
+  -it --name "unitree-a1-dreamer" unitree-a1-dreamer
