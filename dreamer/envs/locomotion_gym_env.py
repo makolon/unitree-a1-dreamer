@@ -24,7 +24,7 @@ import pybullet  # pytype: disable=import-error
 import pybullet_utils.bullet_client as bullet_client
 import pybullet_data as pd
 
-from assets import robot_config
+from robots import robot_config
 from envs.sensors import sensor
 from envs.sensors import space_utils
 

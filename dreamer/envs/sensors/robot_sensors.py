@@ -28,7 +28,7 @@ os.sys.path.insert(0, parentdir)
 import numpy as np
 import typing
 
-from assets import minitaur_pose_utils
+from robots import minitaur_pose_utils
 from envs.sensors import sensor
 
 _ARRAY = typing.Iterable[float] #pylint: disable=invalid-name

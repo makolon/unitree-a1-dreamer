@@ -3,7 +3,7 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from envs.sensors import space_utils
 from envs.sensors import sensor
-from assets import robot_config
+from robots import robot_config
 import cv2
 import pybullet  # pytype: disable=import-error
 import pybullet_utils.bullet_client as bullet_client
@@ -320,7 +320,7 @@ class LocomotionGymEnv(gym.Env):
         numSolverIterations=self._num_bullet_solver_iterations)
       self._pybullet_client.setTimeStep(self._sim_time_step)
       self._pybullet_client.setGravity(0, 0, -9.81)
-      self._pybullet_client.setRealTimeSimulation(True)
+      self._pybullet_client.setRealTimeSimulation(False)
 
       # Loop over all env randomizers.
 
@@ -334,19 +334,13 @@ class LocomotionGymEnv(gym.Env):
         pybullet_client=self._pybullet_client,
         sensors=self._robot_sensors,
         on_rack=self._on_rack,
-        action_repeat=self._gym_config.simulation_parameters.
-        num_action_repeat,
-        motor_control_mode=self._gym_config.simulation_parameters.
-        motor_control_mode,
+        action_repeat=self._gym_config.simulation_parameters.num_action_repeat,
+        motor_control_mode=self._gym_config.simulation_parameters.motor_control_mode,
         reset_time=self._gym_config.simulation_parameters.reset_time,
-        enable_clip_motor_commands=self._gym_config.simulation_parameters.
-        enable_clip_motor_commands,
-        enable_action_filter=self._gym_config.simulation_parameters.
-        enable_action_filter,
-        enable_action_interpolation=self._gym_config.simulation_parameters.
-        enable_action_interpolation,
-        allow_knee_contact=self._gym_config.simulation_parameters.
-        allow_knee_contact,
+        enable_clip_motor_commands=self._gym_config.simulation_parameters.enable_clip_motor_commands,
+        enable_action_filter=self._gym_config.simulation_parameters.enable_action_filter,
+        enable_action_interpolation=self._gym_config.simulation_parameters.enable_action_interpolation,
+        allow_knee_contact=self._gym_config.simulation_parameters.allow_knee_contact,
         reset_position_random_range=self.random_init_range,
         init_pos=self.init_pos
       )

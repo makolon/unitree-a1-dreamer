@@ -17,7 +17,7 @@ def main(env_id='MiniGrid-MazeS11N-v0',
          num_steps=int(1e6),
          env_no_terminal=False,
          env_time_limit=0,
-         env_action_repeat=1,
+         env_action_repeat=33,
          ):
 
     # Env
@@ -32,9 +32,10 @@ def main(env_id='MiniGrid-MazeS11N-v0',
         done = False
         metrics = defaultdict(list)
 
-        while not done:
+        while True:
             action, mets = policy(obs)
-            # action = np.zeros(12)
+            action = np.array([0.21, -0.1157, 0, 0.21, 0.1157, 0,
+                -0.21, -0.1157, 0, -0.21, 0.1157, 0])
             obs, reward, done, inf = env.step(action)
             steps += 1
             for k, v in mets.items():
