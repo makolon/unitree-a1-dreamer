@@ -316,8 +316,9 @@ class LocomotionGymEnv(gym.Env):
     # Clear the simulation world and rebuild the robot interface.
     if self._hard_reset:
       self._pybullet_client.resetSimulation()
-      self._pybullet_client.setPhysicsEngineParameter(
-        numSolverIterations=self._num_bullet_solver_iterations)
+      # TODO: check setPhysicsEngineParameter
+      # self._pybullet_client.setPhysicsEngineParameter(
+      #   numSolverIterations=self._num_bullet_solver_iterations)
       self._pybullet_client.setTimeStep(self._sim_time_step)
       self._pybullet_client.setGravity(0, 0, -9.8)
       self._pybullet_client.setRealTimeSimulation(True)
