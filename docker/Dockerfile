@@ -1,12 +1,17 @@
-FROM nvidia/cudagl:11.0-base-ubuntu20.04
+FROM nvidia/cudagl:11.0-devel-ubuntu20.04
 
-# Install packages without prompting the user to answer any questions
 ENV DEBIAN_FRONTEND=noninteractive
 
+SHELL ["/bin/bash", "-c"]
+
+RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/3bf863cc.pub
+RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub
+
 RUN rm /etc/apt/sources.list.d/cuda.list
-# RUN rm /etc/apt/sources.list.d/nvidia-ml.list
 RUN apt-key del 7fa2af80
 RUN apt-get update && apt-get install -y --no-install-recommends wget
+RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
+RUN dpkg -i cuda-keyring_1.0-1_all.deb
 
 #####################################################
 # Install common apt packages
@@ -152,18 +157,6 @@ RUN pip install torch==1.8.1+cu111 torchvision==0.9.1+cu111 torchaudio===0.8.1 -
 # Run scripts (commands)
 #####################################################
 
-# GL render
-ENV LD_PRELOAD=$LD_PRELOAD:"/usr/lib/x86_64-linux-gnu/libGLEW.so"
+WORKDIR /home/
 
-ENV NVIDIA_VISIBLE_DEVICES=all NVIDIA_DRIVER_CAPABILITIES=all
-
-
-### terminator window settings
-COPY assets/config /
-
-### user group settings
-COPY assets/entrypoint_setup.sh /
-ENTRYPOINT ["/entrypoint_setup.sh"] /
-
-# Run terminator
-CMD ["terminator"]
+RUN echo 'export DISPLAY=:1' >> ~/.bashrc

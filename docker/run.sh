@@ -1,6 +1,6 @@
 #!/bin/bash
 
-docker run --rm \
+docker run \
   --net=host \
   --ipc=host \
   --gpus all \
@@ -11,8 +11,4 @@ docker run --rm \
   -e XAUTHORITY=$home_folder/.Xauthority \
   -e DISPLAY=$DISPLAY \
   -e QT_X11_NO_MITSHM=1 \
-  -e DOCKER_USER_NAME=$(id -un) \
-  -e DOCKER_USER_ID=$(id -u) \
-  -e DOCKER_USER_GROUP_NAME=$(id -gn) \
-  -e DOCKER_USER_GROUP_ID=$(id -g) \
-  -it --name "unitree-a1-dreamer" unitree-a1-dreamer
+  -it --name "unitree-a1-dreamer" unitree-a1-dreamer:latest
