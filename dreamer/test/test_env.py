@@ -19,18 +19,15 @@ def main(env_id='MiniGrid-MazeS11N-v0',
          num_steps=int(1e6),
          env_no_terminal=False,
          env_time_limit=0,
-         env_action_repeat=33,
+         env_action_repeat=16,
          ):
 
     # Env
     env = create_env(env_id, env_no_terminal, env_time_limit, env_action_repeat)
     steps = 0
-    obs = env.reset()
-    done = False
-    metrics = defaultdict(list)
+    _ = env.reset()
 
     # Policy
-    policy = RandomPolicy(env.action_space)
 
     # Camera
     width = 256
@@ -44,9 +41,8 @@ def main(env_id='MiniGrid-MazeS11N-v0',
 
     images = []
     while True:
-        action, mets = policy(obs)
-        # action = np.array([0.21, -0.1157, 0, 0.21, 0.1157, 0,
-        #     -0.21, -0.1157, 0, -0.21, 0.1157, 0])
+        start_time = time.time()
+        action = env.action_space.sample()
         obs, reward, done, inf = env.step(action)
         imgs = p.getCameraImage(width,
                             height,
@@ -56,7 +52,8 @@ def main(env_id='MiniGrid-MazeS11N-v0',
         images.append(img)
         steps += 1
         print('steps: ', steps)
-        if steps > 500:
+        print('fps: ', 1.0 / (time.time() - start_time))
+        if steps > 1000:
             break
     create_video(images)
 
@@ -65,7 +62,7 @@ class RandomPolicy:
     def __init__(self, action_space):
         self.action_space = action_space
 
-    def __call__(self, obs) -> Tuple[int, dict]:
+    def __call__(self) -> Tuple[int, dict]:
         return self.action_space.sample(), {}
 
 
@@ -75,6 +72,6 @@ if __name__ == '__main__':
     parser.add_argument('--policy', type=str, required=True)
     parser.add_argument('--num_steps', type=int, default=1_000_000)
     parser.add_argument('--env_time_limit', type=int, default=0)
-    parser.add_argument('--env_action_repeat', type=int, default=1)
+    parser.add_argument('--env_action_repeat', type=int, default=10)
     args = parser.parse_args()
     main(**vars(args))
