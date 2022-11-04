@@ -19,6 +19,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+
 class TrajectoryGeneratorWrapperEnv(object):
   """A wrapped LocomotionGymEnv with a built-in trajectory generator."""
 
@@ -41,7 +42,7 @@ class TrajectoryGeneratorWrapperEnv(object):
     if not hasattr(trajectory_generator, 'get_action') or not hasattr(
         trajectory_generator, 'get_observation'):
       raise ValueError(
-          'The controller does not have the necessary interface(s) implemented.'
+        'The controller does not have the necessary interface(s) implemented.'
       )
 
     self._trajectory_generator = trajectory_generator
@@ -79,10 +80,12 @@ class TrajectoryGeneratorWrapperEnv(object):
       ValueError if input action is None.
 
     """
+
     if action is None:
       raise ValueError('Action cannot be None')
+
     new_action = self._trajectory_generator.get_action(
-        self._gym_env.robot.GetTimeSinceReset(), action)
+      self._gym_env.robot.GetTimeSinceReset(), action)
 
     original_observation, reward, done, _ = self._gym_env.step(new_action)
 

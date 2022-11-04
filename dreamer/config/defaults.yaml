@@ -18,7 +18,7 @@ defaults:
 
   # Features
   image_key: image
-  image_size: 256
+  image_size: 64
   image_channels: 3
   image_categorical: False
   map_key:
@@ -107,14 +107,39 @@ defaults:
 unitree:
   env_id: UnitreeA1-v0
   action_dim: 12
-  env_time_limit: 500  # =1000/action_repeat
-  env_action_repeat: 3
+  env_time_limit: 10_000
+  env_action_repeat: 16
   generator_workers: 1
-  generator_prefill_steps: 5000
+  generator_prefill_steps: 100_000
   entropy: 1.0e-4
   actor_grad: dynamics
   actor_dist: tanh_normal
   clip_rewards: tanh
+
+  # Model
+  model: dreamer
+  deter_dim: 2048
+  stoch_dim: 32
+  stoch_discrete: 32
+  hidden_dim: 1000
+  gru_layers: 1
+  gru_type: gru
+  layer_norm: True
+  vecobs_size: 0
+  image_encoder: cnn
+  cnn_depth: 48
+  image_encoder_layers: 0
+  image_decoder: cnn
+  image_decoder_layers: 0
+  reward_input: False
+  reward_decoder_layers: 4
+  reward_decoder_categorical:
+  terminal_decoder_layers: 4
+  map_stoch_dim: 64
+  probe_model: none
+  map_decoder: dense
+  map_hidden_layers: 4
+  map_hidden_dim: 1024
 
 minigrid:
   env_id: MiniGrid-MazeS11N-v0

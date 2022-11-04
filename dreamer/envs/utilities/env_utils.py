@@ -23,6 +23,7 @@ import collections
 from gym import spaces
 import numpy as np
 
+
 def flatten_observations(observation_dict, observation_excluded=()):
   """Flattens the observation dictionary to an array.
 
@@ -53,7 +54,7 @@ def flatten_observations(observation_dict, observation_excluded=()):
     for key in observation_excluded:
       observation_dict_after_flatten[key] = observation_dict[key]
     return collections.OrderedDict(
-        sorted(list(observation_dict_after_flatten.items())))
+      sorted(list(observation_dict_after_flatten.items())))
 
 
 def flatten_observation_spaces(observation_spaces, observation_excluded=()):
@@ -83,7 +84,7 @@ def flatten_observation_spaces(observation_spaces, observation_excluded=()):
   lower_bound = np.concatenate(lower_bound)
   upper_bound = np.concatenate(upper_bound)
   observation_space = spaces.Box(
-      np.array(lower_bound), np.array(upper_bound), dtype=np.float32)
+    np.array(lower_bound), np.array(upper_bound), dtype=np.float32)
   if not observation_excluded:
     return observation_space
   else:

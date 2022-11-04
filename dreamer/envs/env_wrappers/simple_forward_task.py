@@ -23,6 +23,7 @@ import numpy as np
 
 class SimpleForwardTask(object):
   """Default empy task."""
+
   def __init__(self):
     """Initializes the task."""
     self.current_base_pos = np.zeros(3)
@@ -50,7 +51,6 @@ class SimpleForwardTask(object):
     """
     rot_quat = env.robot.GetBaseOrientation()
     rot_mat = env.pybullet_client.getMatrixFromQuaternion(rot_quat)
-    # TODO: fix
     return rot_mat[-1] < 0.85
 
   def reward(self, env):

@@ -15,10 +15,9 @@
 
 """A simple locomotion task and termination condition."""
 
-
+from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-from __future__ import absolute_import
 import numpy as np
 
 import os
@@ -29,12 +28,13 @@ parentdir = os.path.dirname(os.path.dirname(currentdir))
 os.sys.path.insert(0, parentdir)
 
 
-class GoalTask(object):
-  """go to goal task."""
+class MoveForwardTask(object):
+  """move forward task."""
 
   def __init__(
       self,
       z_constrain=False,
+      move_forward_coeff=1,
       other_direction_penalty=0,
       z_penalty=0,
       orientation_penalty=0,
@@ -46,17 +46,14 @@ class GoalTask(object):
       target_vel=None,
       check_contact=False,
       target_vel_dir=(1, 0),
-      goal_coeff=10,
-      subgoal=False
+      subgoal_reward=None
       # init_orientation=None,
   ):
     """Initializes the task."""
     self._draw_ref_model_alpha = 1.
-    self.subgoal = subgoal
     # self.energy_weight = -0.01
-    self.goal_coeff = goal_coeff
     self.energy_weight = -0.005
-    self.move_forward_coeff = 1
+    self.move_forward_coeff = move_forward_coeff
     self._ref_model = -1
     self._alive_reward = alive_reward
     self.fall_reward = fall_reward
@@ -72,6 +69,7 @@ class GoalTask(object):
     self.check_contact = check_contact
     # return
     self.target_vel_dir = np.array(target_vel_dir)
+    self.subgoal_reward = subgoal_reward
 
   def __call__(self, env):
     return self.reward(env)
@@ -81,6 +79,12 @@ class GoalTask(object):
     self._env = env
     self.last_base_pos = env.robot.GetBasePosition()
     self.current_base_pos = self.last_base_pos
+
+    if self.subgoal_reward is not None:
+      self.subgoal_trackers = np.ones(
+        len(env._env_randomizers[-1].subgoal_ids),
+        dtype=np.uint8
+      )
 
   def update(self, env):
     """Updates the internal state of the task."""
@@ -93,7 +97,7 @@ class GoalTask(object):
     env = self._env
     pyb = env._pybullet_client
 
-    root_pos_sim, root_rot_sim = pyb.getBasePositionAndOrientation(
+    root_pos_sim, _ = pyb.getBasePositionAndOrientation(
       env.robot.quadruped)
 
     rot_quat = env.robot.GetBaseOrientation()
@@ -117,6 +121,7 @@ class GoalTask(object):
             contact_done = True
             break
 
+      # contacts = env._pybullet_client.getContactPoints(bodyA=env.robot.quadruped)
       for contact in contacts:
         if contact[2] is not env._world_dict["ground"]:
           contact_done = True
@@ -125,7 +130,6 @@ class GoalTask(object):
         (self._time_step * self.num_action_repeat)
 
       contact_done = contact_done and np.linalg.norm(speed) <= 0.05
-
     done = height_fall or rot_fall or contact_done
     return done
 
@@ -134,48 +138,40 @@ class GoalTask(object):
     del env
 
     env = self._env
-    energy_reward = np.dot(
-      env.robot.GetMotorTorques(),
-      env.robot.GetMotorTorques()
-    ) * self._time_step
-
     move_forward_reward = self._calc_reward_root_velocity()
     alive_reward = self._alive_reward
     orientation_reward = self._calc_reward_rotation()
-    goal_reward = self._calc_reward_goal_dist()
-    subgoal_reward = self._calc_reward_subgoal() if self.subgoal else 0
-    reward = goal_reward * self.goal_coeff + move_forward_reward * self.move_forward_coeff + \
-      energy_reward * self.energy_weight - \
+
+    reward = move_forward_reward * self.move_forward_coeff + \
       self.orientation_penalty * orientation_reward + \
-      alive_reward + subgoal_reward
+      alive_reward
     done = self.done(env)
     if done:
       reward += self.fall_reward
+
+    if self.subgoal_reward is not None:
+      dis = env._env_randomizers[-1].subgoal_centers - \
+        self.current_base_pos[:2]
+      dis = np.linalg.norm(dis, axis=1)
+
+      contacted_ones = np.where(
+        (dis < env._env_randomizers[-1].radius) * self.subgoal_trackers
+      )[0]
+
+      for contacted_idx in contacted_ones:
+        self.subgoal_trackers[contacted_idx] = 0
+        reward += self.subgoal_reward
+
+        env.pybullet_client.changeVisualShape(
+          env._env_randomizers[-1].subgoal_ids[contacted_idx],
+          -1,
+          rgbaColor=(1, 0.2, 0.2, 0)
+        )
     return reward
 
   def _get_pybullet_client(self):
     """Get bullet client from the environment"""
     return self._env._pybullet_client
-
-  def _calc_reward_goal_dist(self):
-    env = self._env
-    last_dist = np.linalg.norm(
-      np.array(env._world_dict["goal_pos"]) - self.last_base_pos)
-    current_dist = np.linalg.norm(
-      np.array(env._world_dict["goal_pos"]) - self.current_base_pos)
-    reward = (last_dist - current_dist) / \
-      (self._time_step * self.num_action_repeat)
-    return reward
-
-  def _calc_reward_subgoal(self):
-    subgoal_pos = self._env.world_dict['subgoals']
-    reward = 0
-    for i, pos in enumerate(subgoal_pos):
-      if np.linalg.norm(self.current_base_pos - np.array(pos)) < 1.0:
-        if not self._env.world_dict['subgoals_achieved'][i]:
-          self._env.world_dict['subgoals_achieved'][i] = True
-          reward += 5
-    return reward
 
   def _calc_reward_root_velocity(self):
     """Get the root velocity reward."""
@@ -192,31 +188,22 @@ class GoalTask(object):
                ) / (self._time_step * self.num_action_repeat)
     y_speed = (self.current_base_pos[1] - self.last_base_pos[1]
                ) / (self._time_step * self.num_action_repeat)
-    z_speed = (self.current_base_pos[2] - self.last_base_pos[2]
-               ) / (self._time_step * self.num_action_repeat)
-
     xy_speed = np.array([x_speed, y_speed])
 
-    xy_speed = np.linalg.norm(xy_speed)
-    xy_speed = np.clip(
-      xy_speed, a_min=None, a_max=self.target_vel
+    # / np.linalg.norm(xy_speed)
+    along_speed = np.dot(xy_speed, self.target_vel_dir)
+    per_speed = xy_speed - along_speed * self.target_vel_dir
+
+    # print(along_speed, np.linalg.norm(per_speed))
+    # print()
+    along_speed = np.clip(
+      along_speed, a_min=-self.target_vel, a_max=self.target_vel
     )
-    along_reward = self.target_vel ** 2 - (
-      xy_speed - self.target_vel
-    ) ** 2
+    # use the following to make the reward to 0-1
+    along_reward = along_speed / self.target_vel
 
-    forward_reward = along_reward - self.z_penalty * (z_speed ** 2)
-
-    # y_reward = self.target_vel ** 2 - (y_speed - self.target_vel) ** 2
-
-    # forward_reward = y_reward - \
-    #   self.other_direction_penalty * np.abs(x_speed) - \
-    #   self.other_direction_penalty * np.abs(z_speed)
-
-    # print("Y_Rew:{:.4f}, Z_Rew:{:.4f}".format(
-    #   -self.other_direction_penalty * y_speed,
-    #   -self.other_direction_penalty * z_speed
-    # ))
+    forward_reward = along_reward - \
+      self.other_direction_penalty * (np.linalg.norm(per_speed) ** 2)
 
     return forward_reward
 

@@ -5,6 +5,7 @@ from envs.sensors import space_utils
 from envs.sensors import sensor
 from robots import robot_config
 import cv2
+import time
 import pybullet  # pytype: disable=import-error
 import pybullet_utils.bullet_client as bullet_client
 import pybullet_data as pd
@@ -60,6 +61,7 @@ class LocomotionGymEnv(gym.Env):
                fixed_delay_observation=False,
                ):
     """Initializes the locomotion gym environment.
+
     Args:
       gym_config: An instance of LocomotionGymConfig.
       robot_class: A class of a robot. We provide a class rather than an
@@ -71,8 +73,10 @@ class LocomotionGymEnv(gym.Env):
       env_randomizers: A list of EnvRandomizer(s). An EnvRandomizer may
         randomize the physical property of minitaur, change the terrrain during
         reset(), or add perturbation forces during step().
+
     Raises:
       ValueError: If the num_action_repeat is less than 1.
+
     """
     self.count_t = 0
     self.seed()
@@ -180,14 +184,13 @@ class LocomotionGymEnv(gym.Env):
         assert self.plugin_id != -1, 'Cannot load PyBullet plugin'
         print(self.plugin_id)
 
-        self.pybullet_client.configureDebugVisualizer(
+        self._pybullet_client.configureDebugVisualizer(
           pybullet.COV_ENABLE_RENDERING, 0)
-        self.pybullet_client.configureDebugVisualizer(
+        self._pybullet_client.configureDebugVisualizer(
           pybullet.COV_ENABLE_GUI, 0)
 
-    self.pybullet_client.setAdditionalSearchPath(
+    self._pybullet_client.setAdditionalSearchPath(
       os.path.join(os.path.dirname(__file__), '../assets'))
-    # self._pybullet_client.setAdditionalSearchPath(pd.getDataPath())
     # if gym_config.simulation_parameters.egl_rendering:
     #   self._pybullet_client.loadPlugin('eglRendererPlugin')
 
@@ -280,7 +283,9 @@ class LocomotionGymEnv(gym.Env):
             reset_duration=0.0,
             reset_visualization_camera=True):
     """Resets the robot's position in the world or rebuild the sim world.
+
     The simulation world will be rebuilt if self._hard_reset is True.
+
     Args:
       initial_motor_angles: A list of Floats. The desired joint angles after
         reset. If None, the robot will use its built-in value.
@@ -288,6 +293,7 @@ class LocomotionGymEnv(gym.Env):
         to the desired initial values.
       reset_visualization_camera: Whether to reset debug visualization camera on
         reset.
+
     Returns:
       A numpy array contains the initial observation after reset.
     """
@@ -316,12 +322,10 @@ class LocomotionGymEnv(gym.Env):
     # Clear the simulation world and rebuild the robot interface.
     if self._hard_reset:
       self._pybullet_client.resetSimulation()
-      # TODO: check setPhysicsEngineParameter
-      # self._pybullet_client.setPhysicsEngineParameter(
-      #   numSolverIterations=self._num_bullet_solver_iterations)
-      self._pybullet_client.setTimeStep(self._sim_time_step)
-      self._pybullet_client.setGravity(0, 0, -9.8)
-      self._pybullet_client.setRealTimeSimulation(True)
+      self._pybullet_client.setPhysicsEngineParameter(
+        fixedTimeStep=self._sim_time_step,
+        numSolverIterations=self._num_bullet_solver_iterations)
+      self._pybullet_client.setGravity(0, 0, -10)
 
       # Loop over all env randomizers.
 
@@ -329,19 +333,24 @@ class LocomotionGymEnv(gym.Env):
       self._world_dict = {
         "ground": self._pybullet_client.loadURDF("plane_implicit.urdf")
       }
-
       # Rebuild the robot
       self._robot = self._robot_class(
         pybullet_client=self._pybullet_client,
         sensors=self._robot_sensors,
         on_rack=self._on_rack,
-        action_repeat=self._gym_config.simulation_parameters.num_action_repeat,
-        motor_control_mode=self._gym_config.simulation_parameters.motor_control_mode,
+        action_repeat=self._gym_config.simulation_parameters.
+        num_action_repeat,
+        motor_control_mode=self._gym_config.simulation_parameters.
+        motor_control_mode,
         reset_time=self._gym_config.simulation_parameters.reset_time,
-        enable_clip_motor_commands=self._gym_config.simulation_parameters.enable_clip_motor_commands,
-        enable_action_filter=self._gym_config.simulation_parameters.enable_action_filter,
-        enable_action_interpolation=self._gym_config.simulation_parameters.enable_action_interpolation,
-        allow_knee_contact=self._gym_config.simulation_parameters.allow_knee_contact,
+        enable_clip_motor_commands=self._gym_config.simulation_parameters.
+        enable_clip_motor_commands,
+        enable_action_filter=self._gym_config.simulation_parameters.
+        enable_action_filter,
+        enable_action_interpolation=self._gym_config.simulation_parameters.
+        enable_action_interpolation,
+        allow_knee_contact=self._gym_config.simulation_parameters.
+        allow_knee_contact,
         reset_position_random_range=self.random_init_range,
         init_pos=self.init_pos
       )
@@ -373,7 +382,7 @@ class LocomotionGymEnv(gym.Env):
     if self._task and hasattr(self._task, 'reset'):
       self._task.reset(self)
 
-    self.pybullet_client.changeDynamics(
+    self._pybullet_client.changeDynamics(
       self._world_dict["ground"], -1,
       lateralFriction=self.fric_coeff[0],
       spinningFriction=self.fric_coeff[1],
@@ -384,6 +393,7 @@ class LocomotionGymEnv(gym.Env):
 
   def step(self, action):
     """Step forward the simulation, given the action.
+
     Args:
       action: Can be a list of desired motor angles for all motors when the
         robot is in position control mode; A list of desired motor torques. Or a
@@ -391,12 +401,14 @@ class LocomotionGymEnv(gym.Env):
         action must be compatible with the robot's motor control mode. Also, we
         are not going to use the leg space (swing/extension) definition at the
         gym level, since they are specific to Minitaur.
+
     Returns:
       observations: The observation dictionary. The keys are the sensor names
         and the values are the sensor readings.
       reward: The reward for the current state-action pair.
       done: Whether the episode has ended.
       info: A dictionary that stores diagnostic information.
+
     Raises:
       ValueError: The action dimension is not the same as the number of motors.
       ValueError: The magnitude of actions is out of bounds.
@@ -444,7 +456,7 @@ class LocomotionGymEnv(gym.Env):
       aspect=float(self._render_width) / self._render_height,
       nearVal=0.1,
       farVal=100.0)
-    (_, _, px, _, _) = self.pybullet_client.getCameraImage(
+    (_, _, px, _, _) = self._pybullet_client.getCameraImage(
       width=self._render_width,
       height=self._render_height,
       renderer=pybullet.ER_BULLET_HARDWARE_OPENGL,
@@ -538,16 +550,16 @@ class LocomotionGymEnv(gym.Env):
         ).reshape(-1)
         return observations
 
-      linkstate = self.pybullet_client.getLinkState(
+      linkstate = self._pybullet_client.getLinkState(
         self.robot.quadruped, 0, computeForwardKinematics=True)
-      camInfo = self.pybullet_client.getDebugVisualizerCamera()
+      camInfo = self._pybullet_client.getDebugVisualizerCamera()
       proj_mat = camInfo[3]
       proj_mat = [
         1.0825318098068237, 0.0, 0.0, 0.0, 0.0, 1.732050895690918, 0.0, 0.0, 0.0, 0.0,
         -1.0002000331878662, -1.0, 0.0, 0.0, -0.020002000033855438, 0.0
       ]
       camOrn = linkstate[1]
-      camMat = self.pybullet_client.getMatrixFromQuaternion(camOrn)
+      camMat = self._pybullet_client.getMatrixFromQuaternion(camOrn)
       forwardVec = [camMat[0], camMat[3],
                     camMat[6]]
       camPos = linkstate[0]
@@ -576,13 +588,12 @@ class LocomotionGymEnv(gym.Env):
         forwardVec[2] = 0
 
       camTarget2 = [camPos[i] + forwardVec2[i] * 10 for i in range(3)]
-      viewMat2 = self.pybullet_client.computeViewMatrix(
+      viewMat2 = self._pybullet_client.computeViewMatrix(
         camPos, camTarget2, camUpVec2
       )
 
-      # TODO: change image size
-      camera_image_set = self.pybullet_client.getCameraImage(
-        256, 256, viewMatrix=viewMat2, projectionMatrix=proj_mat,
+      camera_image_set = self._pybullet_client.getCameraImage(
+        64, 64, viewMatrix=viewMat2, projectionMatrix=proj_mat,
         # flags=pybullet.ER_NO_SEGMENTATION_MASK,
         shadow=1,
         lightDirection=[1, 1, 1],
@@ -661,12 +672,14 @@ class LocomotionGymEnv(gym.Env):
 
   def set_time_step(self, num_action_repeat, sim_step=0.001):
     """Sets the time step of the environment.
+
     Args:
       num_action_repeat: The number of simulation steps/action repeats to be
         executed when calling env.step().
       sim_step: The simulation time step in PyBullet. By default, the simulation
         step is 0.001s, which is a good trade-off between simulation speed and
         accuracy.
+
     Raises:
       ValueError: If the num_action_repeat is less than 1.
     """

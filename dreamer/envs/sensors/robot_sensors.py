@@ -21,7 +21,8 @@ from __future__ import print_function
 
 import os
 import inspect
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+currentdir = os.path.dirname(os.path.abspath(
+  inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(os.path.dirname(currentdir))
 os.sys.path.insert(0, parentdir)
 
@@ -31,9 +32,9 @@ import typing
 from robots import minitaur_pose_utils
 from envs.sensors import sensor
 
-_ARRAY = typing.Iterable[float] #pylint: disable=invalid-name
-_FLOAT_OR_ARRAY = typing.Union[float, _ARRAY] #pylint: disable=invalid-name
-_DATATYPE_LIST = typing.Iterable[typing.Any] #pylint: disable=invalid-name
+_ARRAY = typing.Iterable[float]  # pylint: disable=invalid-name
+_FLOAT_OR_ARRAY = typing.Union[float, _ARRAY]  # pylint: disable=invalid-name
+_DATATYPE_LIST = typing.Iterable[typing.Any]  # pylint: disable=invalid-name
 
 
 class MotorAngleSensor(sensor.BoxSpaceSensor):
@@ -65,18 +66,18 @@ class MotorAngleSensor(sensor.BoxSpaceSensor):
 
     if observe_sine_cosine:
       super(MotorAngleSensor, self).__init__(
-          name=name,
-          shape=(self._num_motors * 2,),
-          lower_bound=-np.ones(self._num_motors * 2),
-          upper_bound=np.ones(self._num_motors * 2),
-          dtype=dtype)
+        name=name,
+        shape=(self._num_motors * 2,),
+        lower_bound=-np.ones(self._num_motors * 2),
+        upper_bound=np.ones(self._num_motors * 2),
+        dtype=dtype)
     else:
       super(MotorAngleSensor, self).__init__(
-          name=name,
-          shape=(self._num_motors,),
-          lower_bound=lower_bound,
-          upper_bound=upper_bound,
-          dtype=dtype)
+        name=name,
+        shape=(self._num_motors,),
+        lower_bound=lower_bound,
+        upper_bound=upper_bound,
+        dtype=dtype)
 
   def _get_observation(self) -> _ARRAY:
     if self._noisy_reading:
@@ -88,6 +89,65 @@ class MotorAngleSensor(sensor.BoxSpaceSensor):
       return np.hstack((np.cos(motor_angles), np.sin(motor_angles)))
     else:
       return motor_angles
+
+
+A1_MAX_SPEED = 52.4
+
+
+class MotorVelSensor(sensor.BoxSpaceSensor):
+  """A sensor that reads motor angles from the robot."""
+  # A1_MAX_SPEED = 52.4
+
+  def __init__(self,
+               num_motors: int,
+               noisy_reading: bool = True,
+               #  observe_sine_cosine: bool = False,
+               normalize: bool = True,
+               lower_bound: _FLOAT_OR_ARRAY = -A1_MAX_SPEED,
+               upper_bound: _FLOAT_OR_ARRAY = A1_MAX_SPEED,
+               name: typing.Text = "MotorSpeed",
+               dtype: typing.Type[typing.Any] = np.float64) -> None:
+    """Constructs MotorAngleSensor.
+
+    Args:
+      num_motors: the number of motors in the robot
+      noisy_reading: whether values are true observations
+      observe_sine_cosine: whether to convert readings to sine/cosine values for
+        continuity
+      lower_bound: the lower bound of the motor angle
+      upper_bound: the upper bound of the motor angle
+      name: the name of the sensor
+      dtype: data type of sensor value
+    """
+    self._num_motors = num_motors
+    self._noisy_reading = noisy_reading
+    self._normalize = normalize
+
+    if self._normalize:
+      super(MotorVelSensor, self).__init__(
+        name=name,
+        shape=(self._num_motors,),
+        lower_bound=-np.ones(self._num_motors),
+        upper_bound=np.ones(self._num_motors),
+        dtype=dtype)
+    else:
+      super(MotorVelSensor, self).__init__(
+        name=name,
+        shape=(self._num_motors,),
+        lower_bound=lower_bound,
+        upper_bound=upper_bound,
+        dtype=dtype)
+
+  def _get_observation(self) -> _ARRAY:
+    if self._noisy_reading:
+      motor_vel = self._robot.GetMotorVelocities()
+    else:
+      motor_vel = self._robot.GetTrueMotorVelocities()
+
+    if self._normalize:
+      motor_vel = motor_vel / A1_MAX_SPEED
+    return motor_vel
+
 
 class MinitaurLegPoseSensor(sensor.BoxSpaceSensor):
   """A sensor that reads leg_pose from the Minitaur robot."""
@@ -118,28 +178,29 @@ class MinitaurLegPoseSensor(sensor.BoxSpaceSensor):
 
     if observe_sine_cosine:
       super(MinitaurLegPoseSensor, self).__init__(
-          name=name,
-          shape=(self._num_motors * 2,),
-          lower_bound=-np.ones(self._num_motors * 2),
-          upper_bound=np.ones(self._num_motors * 2),
-          dtype=dtype)
+        name=name,
+        shape=(self._num_motors * 2,),
+        lower_bound=-np.ones(self._num_motors * 2),
+        upper_bound=np.ones(self._num_motors * 2),
+        dtype=dtype)
     else:
       super(MinitaurLegPoseSensor, self).__init__(
-          name=name,
-          shape=(self._num_motors,),
-          lower_bound=lower_bound,
-          upper_bound=upper_bound,
-          dtype=dtype)
+        name=name,
+        shape=(self._num_motors,),
+        lower_bound=lower_bound,
+        upper_bound=upper_bound,
+        dtype=dtype)
 
   def _get_observation(self) -> _ARRAY:
     motor_angles = (
-        self._robot.GetMotorAngles()
-        if self._noisy_reading else self._robot.GetTrueMotorAngles())
+      self._robot.GetMotorAngles()
+      if self._noisy_reading else self._robot.GetTrueMotorAngles())
     leg_pose = minitaur_pose_utils.motor_angles_to_leg_pose(motor_angles)
     if self._observe_sine_cosine:
       return np.hstack((np.cos(leg_pose), np.sin(leg_pose)))
     else:
       return leg_pose
+
 
 class BaseDisplacementSensor(sensor.BoxSpaceSensor):
   """A sensor that reads displacement of robot base."""
@@ -166,11 +227,11 @@ class BaseDisplacementSensor(sensor.BoxSpaceSensor):
     self._num_channels = len(self._channels)
 
     super(BaseDisplacementSensor, self).__init__(
-        name=name,
-        shape=(self._num_channels,),
-        lower_bound=np.array([lower_bound] * 3),
-        upper_bound=np.array([upper_bound] * 3),
-        dtype=dtype)
+      name=name,
+      shape=(self._num_channels,),
+      lower_bound=np.array([lower_bound] * 3),
+      upper_bound=np.array([upper_bound] * 3),
+      dtype=dtype)
 
     datatype = [("{}_{}".format(name, channel), self._dtype)
                 for channel in self._channels]
@@ -218,6 +279,82 @@ class BaseDisplacementSensor(sensor.BoxSpaceSensor):
     self._last_yaw = self._current_yaw
     self._current_yaw = self._robot.GetBaseRollPitchYaw()[2]
 
+
+class BaseDisplacementAndRotateSensor(sensor.BoxSpaceSensor):
+  """A sensor that reads displacement of robot base."""
+
+  def __init__(self,
+               lower_bound: _FLOAT_OR_ARRAY = -0.1,
+               upper_bound: _FLOAT_OR_ARRAY = 0.1,
+               convert_to_local_frame: bool = False,
+               name: typing.Text = "BaseDisplacementAndRotate",
+               dtype: typing.Type[typing.Any] = np.float64) -> None:
+
+    self._channels = ["x", "y", "z", "rx", "ry", "rz", "rw"]
+    self._num_channels = len(self._channels)
+
+    super(BaseDisplacementAndRotateSensor, self).__init__(
+      name=name,
+      shape=(self._num_channels,),
+      lower_bound=np.array([lower_bound] * 7),
+      upper_bound=np.array([upper_bound] * 7),
+      dtype=dtype)
+
+    datatype = [("{}_{}".format(name, channel), self._dtype)
+                for channel in self._channels]
+    self._datatype = datatype
+    self._convert_to_local_frame = convert_to_local_frame
+
+    self._last_yaw = 0
+    self._current_yaw = 0
+    self._last_base_position = np.zeros(3)
+    self._current_base_position = np.zeros(3)
+    self._last_base_ori = np.zeros(4)
+    self._current_base_ori = np.zeros(4)
+
+  def get_channels(self) -> typing.Iterable[typing.Text]:
+    """Returns channels (displacement in x, y, z direction)."""
+    return self._channels
+
+  def get_num_channels(self) -> int:
+    """Returns number of channels."""
+    return self._num_channels
+
+  def get_observation_datatype(self) -> _DATATYPE_LIST:
+    """See base class."""
+    return self._datatype
+
+  def _get_observation(self) -> _ARRAY:
+    """See base class."""
+    dx, dy, dz = self._current_base_position - self._last_base_position
+    dori = self._current_base_ori - self._last_base_ori
+
+    if self._convert_to_local_frame:
+      dx_local = np.cos(self._last_yaw) * dx + np.sin(self._last_yaw) * dy
+      dy_local = -np.sin(self._last_yaw) * dx + np.cos(self._last_yaw) * dy
+      return np.concatenate([np.array([dx_local, dy_local, dz]), dori])
+    else:
+      return np.concatenate([np.array([dx, dy, dz]), dori])
+
+  def on_reset(self, env):
+    """See base class."""
+    self._current_base_position = np.array(self._robot.GetBasePosition())
+    self._last_base_position = np.array(self._robot.GetBasePosition())
+    self._current_base_ori = np.array(self._robot.GetBaseOrientation())
+    self._last_base_ori = np.array(self._robot.GetBaseOrientation())
+    self._current_yaw = self._robot.GetBaseRollPitchYaw()[2]
+    self._last_yaw = self._robot.GetBaseRollPitchYaw()[2]
+
+  def on_step(self, env):
+    """See base class."""
+    self._last_base_position = self._current_base_position
+    self._current_base_position = np.array(self._robot.GetBasePosition())
+    self._last_base_ori = self._current_base_ori
+    self._current_base_ori = np.array(self._robot.GetBaseOrientation())
+    self._last_yaw = self._current_yaw
+    self._current_yaw = self._robot.GetBaseRollPitchYaw()[2]
+
+
 class IMUSensor(sensor.BoxSpaceSensor):
   """An IMU sensor that reads orientations and angular velocities."""
 
@@ -264,11 +401,11 @@ class IMUSensor(sensor.BoxSpaceSensor):
           upper_bound.append(2000.0 * np.pi)
 
     super(IMUSensor, self).__init__(
-        name=name,
-        shape=(self._num_channels,),
-        lower_bound=lower_bound,
-        upper_bound=upper_bound,
-        dtype=dtype)
+      name=name,
+      shape=(self._num_channels,),
+      lower_bound=lower_bound,
+      upper_bound=upper_bound,
+      dtype=dtype)
 
     # Compute the observation_datatype
     datatype = [("{}_{}".format(name, channel), self._dtype)
@@ -325,6 +462,7 @@ class IMUSensor(sensor.BoxSpaceSensor):
         observations[i] = drpy[2]
     return observations
 
+
 class BasePositionSensor(sensor.BoxSpaceSensor):
   """A sensor that reads the base position of the Minitaur robot."""
 
@@ -342,14 +480,15 @@ class BasePositionSensor(sensor.BoxSpaceSensor):
       dtype: data type of sensor value
     """
     super(BasePositionSensor, self).__init__(
-        name=name,
-        shape=(3,),  # x, y, z
-        lower_bound=lower_bound,
-        upper_bound=upper_bound,
-        dtype=dtype)
+      name=name,
+      shape=(3,),  # x, y, z
+      lower_bound=lower_bound,
+      upper_bound=upper_bound,
+      dtype=dtype)
 
   def _get_observation(self) -> _ARRAY:
     return self._robot.GetBasePosition()
+
 
 class PoseSensor(sensor.BoxSpaceSensor):
   """A sensor that reads the (x, y, theta) of a robot."""
@@ -368,11 +507,11 @@ class PoseSensor(sensor.BoxSpaceSensor):
       dtype: data type of sensor value.
     """
     super(PoseSensor, self).__init__(
-        name=name,
-        shape=(3,),  # x, y, orientation
-        lower_bound=lower_bound,
-        upper_bound=upper_bound,
-        dtype=dtype)
+      name=name,
+      shape=(3,),  # x, y, orientation
+      lower_bound=lower_bound,
+      upper_bound=upper_bound,
+      dtype=dtype)
 
   def _get_observation(self) -> _ARRAY:
     return np.concatenate((self._robot.GetBasePosition()[:2],

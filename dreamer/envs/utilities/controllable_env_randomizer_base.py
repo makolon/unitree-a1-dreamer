@@ -15,13 +15,13 @@
 
 """Base class for controllable environment randomizer."""
 
+from envs.utilities import env_randomizer_base
 import os
 import inspect
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+currentdir = os.path.dirname(os.path.abspath(
+  inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(os.path.dirname(currentdir))
 os.sys.path.insert(0, parentdir)
-
-from envs.utilities import env_randomizer_base
 
 
 class ControllableEnvRandomizerBase(env_randomizer_base.EnvRandomizerBase):
@@ -30,6 +30,7 @@ class ControllableEnvRandomizerBase(env_randomizer_base.EnvRandomizerBase):
   Randomizes physical parameters of the objects in the simulation and adds
   perturbations to the stepping of the simulation.
   """
+
   def get_randomization_parameters(self):
     """Get the parameters of the randomization."""
     raise NotImplementedError
