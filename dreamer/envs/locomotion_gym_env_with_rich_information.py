@@ -323,8 +323,8 @@ class LocomotionGymEnv(gym.Env):
     if self._hard_reset:
       self._pybullet_client.resetSimulation()
       self._pybullet_client.setPhysicsEngineParameter(
-        fixedTimeStep=self._sim_time_step,
         numSolverIterations=self._num_bullet_solver_iterations)
+      self._pybullet_client.setTimeStep(self._sim_time_step)
       self._pybullet_client.setGravity(0, 0, -10)
 
       # Loop over all env randomizers.
@@ -337,20 +337,13 @@ class LocomotionGymEnv(gym.Env):
       self._robot = self._robot_class(
         pybullet_client=self._pybullet_client,
         sensors=self._robot_sensors,
-        on_rack=self._on_rack,
-        action_repeat=self._gym_config.simulation_parameters.
-        num_action_repeat,
-        motor_control_mode=self._gym_config.simulation_parameters.
-        motor_control_mode,
+        action_repeat=self._gym_config.simulation_parameters.num_action_repeat,
+        motor_control_mode=self._gym_config.simulation_parameters.motor_control_mode,
         reset_time=self._gym_config.simulation_parameters.reset_time,
-        enable_clip_motor_commands=self._gym_config.simulation_parameters.
-        enable_clip_motor_commands,
-        enable_action_filter=self._gym_config.simulation_parameters.
-        enable_action_filter,
-        enable_action_interpolation=self._gym_config.simulation_parameters.
-        enable_action_interpolation,
-        allow_knee_contact=self._gym_config.simulation_parameters.
-        allow_knee_contact,
+        enable_clip_motor_commands=self._gym_config.simulation_parameters.enable_clip_motor_commands,
+        enable_action_filter=self._gym_config.simulation_parameters.enable_action_filter,
+        enable_action_interpolation=self._gym_config.simulation_parameters.enable_action_interpolation,
+        allow_knee_contact=self._gym_config.simulation_parameters.allow_knee_contact,
         reset_position_random_range=self.random_init_range,
         init_pos=self.init_pos
       )

@@ -111,7 +111,6 @@ class Minitaur(object):
                motor_overheat_protection=False,
                motor_direction=MINITAUR_DEFAULT_MOTOR_DIRECTIONS,
                motor_offset=MINITAUR_DEFAULT_MOTOR_OFFSETS,
-               on_rack=False,
                reset_at_current_position=False,
                reset_position_random_range=0,
                sensors=None,
@@ -156,9 +155,6 @@ class Minitaur(object):
       motor_offset: A list of offset value for the motor angles. This is used to
         compensate the angle difference between the simulation and the real
         robot.
-      on_rack: Whether to place the minitaur on rack. This is only used to debug
-        the walking gait. In this mode, the minitaur's base is hanged midair so
-        that its walking gait is clearer to visualize.
       reset_at_current_position: Whether to reset the minitaur at the current
         position and orientation. This is for simulating the reset behavior in
         the real world.
@@ -192,7 +188,6 @@ class Minitaur(object):
     self._is_render = is_render
 
     self._motor_overheat_protection = motor_overheat_protection
-    self._on_rack = on_rack
     self._reset_at_current_position = reset_at_current_position
     self.SetAllSensors(sensors if sensors is not None else list())
     self._is_safe = True
@@ -203,10 +198,6 @@ class Minitaur(object):
 
     if not motor_model_class:
       raise ValueError("Must provide a motor model class!")
-
-    if self._on_rack and self._reset_at_current_position:
-      raise ValueError("on_rack and reset_at_current_position "
-                       "cannot be enabled together")
 
     if isinstance(motor_kp, (collections.Sequence, np.ndarray)):
       self._motor_kps = np.asarray(motor_kp)
@@ -442,9 +433,6 @@ class Minitaur(object):
     """
     if reload_urdf:
       self._LoadRobotURDF()
-      if self._on_rack:
-        self.rack_constraint = (self._CreateRackConstraint(
-          self._GetDefaultInitPosition(), self._GetDefaultInitOrientation()))
       self._BuildJointNameToIdDict()
       self._BuildUrdfIds()
       self._RemoveDefaultJointDamping()
@@ -1359,11 +1347,6 @@ class Minitaur(object):
       x, y, _ = self.GetBasePosition()
       _, _, z = INIT_POSITION
       return [x, y, z]
-
-    if self._on_rack:
-      return INIT_RACK_POSITION
-    else:
-      return INIT_POSITION
 
   def _GetDefaultInitOrientation(self):
     """Returns the init position of the robot.

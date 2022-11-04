@@ -176,10 +176,10 @@ def build_a1_ground_env(
     rgbd=False,
     fric_coeff=[0.8, 0.1, 0.1],
     terrain_type="random_blocks_sparse",
-    alive_reward=0.1,
-    fall_reward=0,
+    alive_reward=-0.05,
+    fall_reward=-20,
     target_vel=1,
-    random_init_range=0,
+    random_init_range=1.0,
     dir_update_interval=None,
     check_contact=False,
     random_dir=False,
@@ -200,67 +200,35 @@ def build_a1_ground_env(
     interpolation=False,
     fixed_delay_observation=False,
 ):
-
-  sim_params = locomotion_gym_config.SimulationParameters()
-  sim_params.enable_rendering = enable_rendering
-
-  if motor_control_mode == "TORQUE":
-    sim_params.motor_control_mode = robot_config.MotorControlMode.TORQUE
-  elif motor_control_mode == "POSITION":
-    sim_params.motor_control_mode = robot_config.MotorControlMode.POSITION
-  else:
-    print("Use TORQUE or POSITION")
-    exit()
-
-  sim_params.reset_time = 2
-  sim_params.sim_time_step_s = time_step_s
-  sim_params.num_action_repeat = num_action_repeat
-  sim_params.enable_action_interpolation = enable_action_interpolation
-  sim_params.enable_action_filter = enable_action_filter
-  sim_params.enable_clip_motor_commands = False
-
-  if subgoal:
-    sim_params.enable_hard_reset = False
-
-  # sim_params.egl_rendering = True
   gym_config = locomotion_gym_config.LocomotionGymConfig(
-    simulation_parameters=sim_params)
+    simulation_parameters=locomotion_gym_config.SimulationParameters())
 
-  robot_class = a1.A1
-
+  # sensors
   displacement_sensor = robot_sensors.BaseDisplacementAndRotateSensor if rotate_sensor else robot_sensors.BaseDisplacementSensor
   sensors = [
     sensor_wrappers.HistoricSensorWrapper(
       wrapped_sensor=robot_sensors.MotorAngleSensor(
-        num_motors=a1.NUM_MOTORS), num_history=3
-    ),
+        num_motors=a1.NUM_MOTORS), num_history=3),
     sensor_wrappers.HistoricSensorWrapper(
-      wrapped_sensor=robot_sensors.IMUSensor(), num_history=3
-    ),
-  ]
+      wrapped_sensor=robot_sensors.IMUSensor(), num_history=3),]
+
   if not no_displacement:
     sensors.append(
       sensor_wrappers.HistoricSensorWrapper(
-        wrapped_sensor=displacement_sensor(), num_history=3
-      ),
-    )
+        wrapped_sensor=displacement_sensor(), num_history=3),)
 
   if goal:
-    sensors.append(
-      environment_sensors.GoalPosSensor()
-    )
+    sensors.append(environment_sensors.GoalPosSensor())
 
   if add_last_action_input:
-    sensors.append(
-      sensor_wrappers.HistoricSensorWrapper(
-        wrapped_sensor=environment_sensors.LastActionSensor(
-          num_actions=a1.NUM_MOTORS),
-        num_history=3
-      )
-    )
+    sensors.append(sensor_wrappers.HistoricSensorWrapper(
+      wrapped_sensor=environment_sensors.LastActionSensor(num_actions=a1.NUM_MOTORS), num_history=3))
 
+  # terrain
   if terrain_type == "mount" or terrain_type == "hill":
     check_contact = True
+  
+  # task
   if goal:
     task = goal_task.GoalTask(
       z_constrain=z_constrain,
@@ -289,8 +257,9 @@ def build_a1_ground_env(
       target_vel=target_vel,
       check_contact=check_contact,
       subgoal_reward=subgoal_reward
-      # init_orientation=lc.INIT_ORIENTATION,
     )
+
+  # randomizer
   randomizers = []
   if domain_randomization:
     randomizer = controllable_env_randomizer_from_config.ControllableEnvRandomizerFromConfig(
@@ -306,13 +275,16 @@ def build_a1_ground_env(
   )
   randomizers.append(terrain_randomizer)
 
+  # init pose
   init_pos = None
   init_ori = None
   init_pos = a1_rg.QUADRUPED_INIT_POSITION[terrain_type]
   if "mount" in terrain_type:
     init_ori = a1_rg.QUADRUPED_INIT_ORI[terrain_type]
+
+  # create gym env, NOTE: parameters are set here!
   env = locomotion_gym_env_with_rich_information.LocomotionGymEnv(
-    gym_config=gym_config, robot_class=robot_class,
+    gym_config=gym_config, robot_class=a1.A1,
     robot_sensors=sensors, env_randomizers=randomizers,
     get_image=get_image,
     depth_image=depth_image,
@@ -350,6 +322,7 @@ def build_a1_ground_env(
                                                       episode_length_end=2000,
                                                       curriculum_steps=10000000,
                                                       num_parallel_envs=8)
+
   return env
 
 
@@ -360,10 +333,10 @@ if __name__ == "__main__":
     other_direction_penalty=0,
     z_penalty=1,
     clip_num=[0.05, 0.5, 0.5, 0.05, 0.5, 0.5, 0.05, 0.5, 0.5, 0.05, 0.5, 0.5],
-    enable_rendering=False,
+    enable_rendering=True,
     diagonal_act=False,
     num_action_repeat=16,
-    time_step_s=0.0025,
+    time_step_s=0.001,
     add_last_action_input=True,
     enable_action_interpolation=False,
     enable_action_filter=False,

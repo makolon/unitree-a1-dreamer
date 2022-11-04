@@ -110,7 +110,7 @@ def mlflow_load_checkpoint(model, optimizers=tuple(), artifact_path='checkpoints
     import torch
     with tempfile.TemporaryDirectory() as tmpdir:
         client = MlflowClient()
-        run_id = '9aee61df8f374aedaab7e401d9bc7fa1' # mlflow.active_run().info.run_id  # type: ignore
+        run_id = mlflow.active_run().info.run_id  # type: ignore
         try:
             path = client.download_artifacts(run_id, artifact_path, tmpdir)
         except Exception as e:  # TODO: check if it's an error instead of expected "not found"

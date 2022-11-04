@@ -163,11 +163,10 @@ class A1(minitaur.Minitaur):
       pybullet_client,
       urdf_filename=URDF_FILENAME,
       enable_clip_motor_commands=False,
-      time_step=0.001,
-      action_repeat=10,
+      time_step=0.0025,
+      action_repeat=16,
       sensors=None,
       control_latency=0.002,
-      on_rack=False,
       enable_action_interpolation=False,
       enable_action_filter=False,
       motor_control_mode=None,
@@ -208,7 +207,6 @@ class A1(minitaur.Minitaur):
       motor_kp=motor_kp,
       motor_kd=motor_kd,
       control_latency=control_latency,
-      on_rack=on_rack,
       enable_action_interpolation=enable_action_interpolation,
       enable_action_filter=enable_action_filter,
       reset_time=reset_time,
@@ -347,10 +345,7 @@ class A1(minitaur.Minitaur):
     return MOTOR_NAMES
 
   def _GetDefaultInitPosition(self):
-    if self._on_rack:
-      return INIT_RACK_POSITION
-    else:
-      return INIT_POSITION if self.init_pos is None else self.init_pos
+    return INIT_POSITION if self.init_pos is None else self.init_pos
 
   def _GetDefaultInitOrientation(self):
     # The Laikago URDF assumes the initial pose of heading towards z axis,
