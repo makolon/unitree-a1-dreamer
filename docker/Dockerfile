@@ -69,7 +69,6 @@ RUN git clone https://gitlab.kitware.com/cmake/cmake.git && \
 #####################################################
 # Python 3.8
 #####################################################
-RUN add-apt-repository ppa:deadsnakes/ppa
 RUN apt-get update && apt-get install -y \
   python3.8 \
   python3-pip \

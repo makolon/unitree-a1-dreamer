@@ -139,6 +139,7 @@ class DataSequential(IterableDataset):
         steps_filtered = 0
         for f in files_all:
             steps_total += f.steps
+            print('steps_total: ', steps_total)
             if steps_total < self.buffer_size or not self.buffer_size:
                 files.append(f)
                 steps_filtered += f.steps

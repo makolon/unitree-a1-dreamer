@@ -1,17 +1,17 @@
 defaults:
   # Job
-  n_steps: 1_000_000
-  n_env_steps: 1_000_000_000
+  n_steps: 10_000_000_000
+  n_env_steps: 100_000_000_000
   run_name:
   resume_id:
   offline_data_dir:
   offline_prefill_dir:
   offline_test_dir:
   offline_eval_dir:
-  log_interval: 100
-  logbatch_interval: 1000
-  save_interval: 500
-  eval_interval: 2000
+  log_interval: 10_000
+  logbatch_interval: 100_000
+  save_interval: 10_000
+  eval_interval: 100_000
   data_workers: 4
   enable_profiler: False
   verbose: False
@@ -29,7 +29,7 @@ defaults:
   clip_rewards:
   
   # Training
-  buffer_size: 10_000_000
+  buffer_size: 1_000_000
   reset_interval: 200
   iwae_samples: 1
   kl_balance: 0.8
@@ -38,16 +38,16 @@ defaults:
   vecobs_weight: 1.0
   reward_weight: 1.0
   terminal_weight: 1.0
-  adam_lr: 3.0e-4
+  adam_lr: 1.0e-4
   adam_lr_actor: 1.0e-4
   adam_lr_critic: 1.0e-4
-  adam_eps: 1.0e-5
+  adam_eps: 1.0e-6
   keep_state: True
-  batch_length: 50
-  batch_size: 50
+  batch_length: 32
+  batch_size: 32
   device: "cuda:0"
-  grad_clip: 200
-  grad_clip_ac: 200
+  grad_clip: 100
+  grad_clip_ac: 100
   image_decoder_min_prob: 0
   amp: True
 
@@ -60,10 +60,10 @@ defaults:
 
   # Model
   model: dreamer
-  deter_dim: 2048
+  deter_dim: 256
   stoch_dim: 32
   stoch_discrete: 32
-  hidden_dim: 1000
+  hidden_dim: 256
   gru_layers: 1
   gru_type: gru
   layer_norm: True
@@ -93,15 +93,15 @@ defaults:
   actor_dist: onehot
 
   # Generator
-  generator_workers: 4
+  generator_workers: 1
   generator_workers_eval: 1
-  generator_prefill_steps: 200_000
+  generator_prefill_steps: 5_000
   generator_prefill_policy: random
   limit_step_ratio: 0
   env_id: UnitreeA1-v0
   env_id_eval:
-  env_action_repeat: 1
-  env_time_limit: 0
+  env_action_repeat: 16
+  env_time_limit: 250
   env_no_terminal: False
 
 unitree:
@@ -113,23 +113,23 @@ unitree:
   clip_rewards: tanh
 
   # Generator
-  generator_workers: 4
+  generator_workers: 1
   generator_workers_eval: 1
-  generator_prefill_steps: 5000
-  generator_prefill_policy: network
+  generator_prefill_steps: 5_000
+  generator_prefill_policy: random
   limit_step_ratio: 0
   env_id: UnitreeA1-v0
   env_id_eval:
   env_action_repeat: 16
-  env_time_limit: 50
+  env_time_limit: 250
   env_no_terminal: False
 
   # Model
   model: dreamer
-  deter_dim: 2048
+  deter_dim: 1024
   stoch_dim: 32
   stoch_discrete: 32
-  hidden_dim: 1000
+  hidden_dim: 1024
   gru_layers: 1
   gru_type: gru
   layer_norm: True
