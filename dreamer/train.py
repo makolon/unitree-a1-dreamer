@@ -47,7 +47,6 @@ def run(conf):
     device = torch.device(conf.device)
 
     # Generator / Agent
-
     input_dirs = []
     eval_dirs = []
     subprocesses: list[Process] = []
@@ -55,17 +54,14 @@ def run(conf):
 
     if conf.offline_data_dir:
         # Offline data
-
         input_dirs.extend(to_list(conf.offline_data_dir))
         online_data = False
 
     else:
         # Online data
-
         online_data = True
 
         # Prefill
-
         if conf.offline_prefill_dir:
             # Prefill with existing offline data
             input_dirs.extend(to_list(conf.offline_prefill_dir))
@@ -91,7 +87,6 @@ def run(conf):
             return
 
         # Agents
-
         info('Starting agent generators...')
         for i in range(conf.generator_workers):
             # If eval environment is the same, we can use one agent for both train and eval data
@@ -122,7 +117,6 @@ def run(conf):
             subprocesses.append(p)
 
     # Eval data
-
     if conf.offline_eval_dir:
         eval_dirs.extend(to_list(conf.offline_eval_dir))
     else:
@@ -145,7 +139,6 @@ def run(conf):
         test_dirs = eval_dirs
 
     # Data reader
-
     repository = MlflowEpisodeRepository(input_dirs)
     data = DataSequential(repository,
                           conf.batch_length,
@@ -163,7 +156,6 @@ def run(conf):
                               amp=conf.device.startswith('cuda') and conf.amp)
 
     # MODEL
-
     if conf.model == 'dreamer':
         model = Dreamer(conf)
     else:
@@ -175,7 +167,6 @@ def run(conf):
     mlflow_log_text(repr(model), 'architecture.txt')
 
     # Training
-
     optimizers = model.init_optimizers(conf.adam_lr, conf.adam_lr_actor, conf.adam_lr_critic, conf.adam_eps)
     resume_step = tools.mlflow_load_checkpoint(model, optimizers)
     if resume_step:
@@ -223,6 +214,9 @@ def run(conf):
                     with autocast(enabled=conf.amp):
 
                         state = states.get(wid) or model.init_state(conf.batch_size * conf.iwae_samples)
+                        # TODO: make clear obs and state
+                        print('obs: ', obs)
+                        print('state: ', state)
                         losses, new_state, loss_metrics, tensors, dream_tensors = \
                             model.training_step(obs,
                                                 state,
@@ -234,7 +228,6 @@ def run(conf):
                             states[wid] = new_state
 
                 # Backward
-
                 with timer('backward'):
 
                     for opt in optimizers:
@@ -243,7 +236,6 @@ def run(conf):
                         scaler.scale(loss).backward()
 
                 # Grad step
-
                 with timer('gradstep'):  # CUDA wait happens here
 
                     for opt in optimizers:
@@ -254,9 +246,7 @@ def run(conf):
                     scaler.update()
 
                 with timer('other'):
-
                     # Metrics
-
                     for k, v in loss_metrics.items():
                         if not np.isnan(v.item()):
                             metrics[k].append(v.item())
@@ -270,14 +260,12 @@ def run(conf):
                         metrics_max[f'data_{k}'].append(batch[k].max().item())
 
                     # Log sample
-
                     if steps % conf.logbatch_interval == 1:
                         log_batch_npz(batch, tensors, f'{steps:07}.npz', subdir='d2_wm_closed')
                     if dream_tensors:
                         log_batch_npz(batch, dream_tensors, f'{steps:07}.npz', subdir='d2_wm_dream')
 
                     # Log data buffer size
-
                     if steps % conf.logbatch_interval == 0:
                         repository = MlflowEpisodeRepository(input_dirs)
                         data_train = DataSequential(repository, conf.batch_length, conf.batch_size, buffer_size=conf.buffer_size)
@@ -285,7 +273,6 @@ def run(conf):
                         metrics['data_env_steps'].append(data_train.stats_steps * conf.env_action_repeat)
 
                     # Log metrics
-
                     if steps % conf.log_interval == 0:
                         metrics = {f'train/{k}': np.mean(v) for k, v in metrics.items()}
                         metrics.update({f'train/{k}_max': np.max(v) for k, v in metrics_max.items()})
@@ -312,7 +299,6 @@ def run(conf):
                         metrics_max = defaultdict(list)
 
                         # Check subprocess
-
                         subp_finished = []
                         for p in subprocesses:
                             if not p.is_alive():
@@ -325,19 +311,16 @@ def run(conf):
                             subprocesses.remove(p)
 
                     # Save model
-
                     if steps % conf.save_interval == 0:
                         tools.mlflow_save_checkpoint(model, optimizers, steps)
                         info(f'Saved model checkpoint {steps}')
 
                     # Stop
-
                     if steps >= conf.n_steps or (online_data and len(subprocesses) == 0):
                         info('Stopping')
                         break
 
                 # Evaluate
-
                 with timer('eval'):
                     if conf.eval_interval and steps % conf.eval_interval == 0:
                         try:
@@ -409,13 +392,11 @@ def evaluate(prefix: str,
                 n_finished_episodes += reset_episodes.cpu().numpy()
 
             # Log _last predictions from the last batch of previous episode # TODO: make generic for goal probes
-
             if n_reset_episodes > 0 and tensors is not None and 'loss_map' in tensors:
                 logprob_map_last = (tensors['loss_map'].mean(dim=0) * reset_episodes).sum() / reset_episodes.sum()
                 metrics_eval['logprob_map_last'].append(logprob_map_last.item())
 
             # Open loop & unseen logprob
-
             if n_continued_episodes > 0:
                 with autocast(enabled=conf.amp):
                     _, _, _, tensors_im, _ = \
@@ -440,7 +421,6 @@ def evaluate(prefix: str,
                                 metrics_eval[f'{key}_open'].append(lp)  # logprob_image_open, ...
 
             # Closed loop & loss
-
             with autocast(enabled=conf.amp):
                 if state is None or not keep_state:
                     state = model.init_state(B * eval_samples)
@@ -457,7 +437,6 @@ def evaluate(prefix: str,
                         metrics_eval[k].append(v.item())
 
             # Log one episode batch
-
             if do_output_tensors:
                 npz_datas.append(prepare_batch_npz(dict(**batch, **tensors), take_b=1))
             if n_finished_episodes[0] > 0:

@@ -5,6 +5,7 @@ from envs.sensors import space_utils
 from envs.sensors import sensor
 from robots import robot_config
 import cv2
+import re
 import time
 import pybullet  # pytype: disable=import-error
 import pybullet_utils.bullet_client as bullet_client
@@ -515,7 +516,8 @@ class LocomotionGymEnv(gym.Env):
     """
     sensors_dict = {}
     for s in self.all_sensors():
-      sensors_dict[s.get_name()] = s.get_observation()
+      sensor_name = re.findall("(?<=\().+?(?=\))", s.get_name())[0].lower()
+      sensors_dict[sensor_name] = s.get_observation()
 
     for r in self._env_randomizers:
       if hasattr(r, 'env_info'):

@@ -30,8 +30,8 @@ def main(env_id='MiniGrid-MazeS11N-v0',
     # Policy
 
     # Camera
-    width = 256
-    height = 256
+    width = 1024
+    height = 1204
     fov = 120
     aspect = width / height
     near = 0.02
@@ -49,21 +49,14 @@ def main(env_id='MiniGrid-MazeS11N-v0',
                             view_matrix,
                             projection_matrix)
         _, _, img, _, _ = imgs
+        img = obs['image']
         images.append(img)
         steps += 1
         print('steps: ', steps)
         print('fps: ', 1.0 / (time.time() - start_time))
         if steps > 1000:
             break
-    create_video(images)
-
-
-class RandomPolicy:
-    def __init__(self, action_space):
-        self.action_space = action_space
-
-    def __call__(self) -> Tuple[int, dict]:
-        return self.action_space.sample(), {}
+    create_video(images, 64, 64)
 
 
 if __name__ == '__main__':

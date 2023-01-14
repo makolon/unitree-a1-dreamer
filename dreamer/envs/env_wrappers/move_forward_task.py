@@ -30,7 +30,6 @@ os.sys.path.insert(0, parentdir)
 
 class MoveForwardTask(object):
   """move forward task."""
-
   def __init__(
       self,
       z_constrain=False,

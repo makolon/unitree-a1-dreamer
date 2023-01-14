@@ -176,8 +176,8 @@ def build_a1_ground_env(
     rgbd=False,
     fric_coeff=[0.8, 0.1, 0.1],
     terrain_type="random_blocks_sparse",
-    alive_reward=-0.05,
-    fall_reward=-20,
+    alive_reward=0.1,
+    fall_reward=0.0,
     target_vel=1,
     random_init_range=1.0,
     dir_update_interval=None,
@@ -284,8 +284,10 @@ def build_a1_ground_env(
 
   # create gym env, NOTE: parameters are set here!
   env = locomotion_gym_env_with_rich_information.LocomotionGymEnv(
-    gym_config=gym_config, robot_class=a1.A1,
-    robot_sensors=sensors, env_randomizers=randomizers,
+    gym_config=gym_config,
+    robot_class=a1.A1,
+    robot_sensors=sensors,
+    env_randomizers=randomizers,
     get_image=get_image,
     depth_image=depth_image,
     grayscale=grayscale,
