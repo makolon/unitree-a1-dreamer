@@ -15,7 +15,7 @@
 
 """Base class for controllable environment randomizer."""
 
-from vision4leg.envs.utilities import env_randomizer_base
+from envs.utilities import env_randomizer_base
 import os
 import inspect
 currentdir = os.path.dirname(os.path.abspath(
