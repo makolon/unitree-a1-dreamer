@@ -169,7 +169,7 @@ def build_a1_ground_env(
     enable_action_interpolation=False,
     enable_action_filter=False,
     domain_randomization=False,
-    get_image=False,
+    get_image=True,
     depth_image=False,
     depth_norm=False,
     grayscale=True,

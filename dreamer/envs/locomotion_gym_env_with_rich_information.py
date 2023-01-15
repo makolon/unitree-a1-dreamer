@@ -398,7 +398,7 @@ class LocomotionGymEnv(gym.Env):
       rollingFriction=self.fric_coeff[2]
     )
 
-    return self._get_observation(reset=True)
+    return self._get_observation(action=None, reward=None, done=None, reset=True)
 
   def step(self, action):
     """Step forward the simulation, given the action.
@@ -447,7 +447,7 @@ class LocomotionGymEnv(gym.Env):
     self._env_step_counter += 1
     if done:
       self._robot.Terminate()
-    return self._get_observation(), reward, done, {}
+    return self._get_observation(action, reward, done, None), reward, done, {}
 
   def render(self, mode='rgb_array'):
     if mode != 'rgb_array':
@@ -524,7 +524,7 @@ class LocomotionGymEnv(gym.Env):
       return self._task(self)
     return 0
 
-  def _get_observation(self, reset=False):
+  def _get_observation(self, action, reward, done, reset=False):
     """Get observation of this environment from a list of sensors.
 
     Returns:
