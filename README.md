@@ -23,3 +23,10 @@ cd ./docker
 cd unitree-a1-dreamer/dreamer \
 python3 train.py --config defaults unitree --env_id UnitreeA1
 ```
+
+## Visualize learning results
+```
+cd unitree-a1-dreamer/dreamer \
+mlflow ui
+```
+Then, you can see the learning results by accessing http://127.0.0.1:5000
