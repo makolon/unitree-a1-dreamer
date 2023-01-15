@@ -23,7 +23,6 @@ from envs.sensors import environment_sensors
 from envs.env_wrappers import move_forward_task
 from envs.env_wrappers import move_forward_task_mpc
 from envs.env_wrappers import goal_task
-from envs.env_wrappers import rma_task
 from envs.env_wrappers import observation_dictionary_to_array_wrapper
 from envs.env_wrappers import curriculum_wrapper_env
 from envs.utilities import controllable_env_randomizer_from_config
@@ -160,27 +159,27 @@ def build_a1_ground_env(
     motor_control_mode="POSITION",
     z_constrain=False,
     other_direction_penalty=0,
-    z_penalty=1,
-    clip_num=[0.05, 0.5, 0.5, 0.05, 0.5, 0.5, 0.05, 0.5, 0.5, 0.05, 0.5, 0.5],
+    z_penalty=0,
+    clip_num=None,
     enable_rendering=False,
     diagonal_act=False,
-    num_action_repeat=16,
-    time_step_s=0.0025,
-    add_last_action_input=True,
+    num_action_repeat=10,
+    time_step_s=0.001,
+    add_last_action_input=False,
     enable_action_interpolation=False,
     enable_action_filter=False,
-    domain_randomization=True,
-    get_image=True,
+    domain_randomization=False,
+    get_image=False,
     depth_image=False,
     depth_norm=False,
     grayscale=True,
     rgbd=False,
     fric_coeff=[0.8, 0.1, 0.1],
-    terrain_type="random_blocks_sparse",
+    terrain_type="plane",
     alive_reward=0.1,
-    fall_reward=0.0,
+    fall_reward=0,
     target_vel=1,
-    random_init_range=1.0,
+    random_init_range=0,
     dir_update_interval=None,
     check_contact=False,
     random_dir=False,
@@ -195,41 +194,73 @@ def build_a1_ground_env(
     get_image_interval=1,
     reset_frame_idx=False,
     reset_frame_idx_each_step=False,
-    random_shape=True,
+    random_shape=False,
     moving=False,
     curriculum=False,
     interpolation=False,
     fixed_delay_observation=False,
 ):
-  gym_config = locomotion_gym_config.LocomotionGymConfig(
-    simulation_parameters=locomotion_gym_config.SimulationParameters())
 
-  # sensors
+  sim_params = locomotion_gym_config.SimulationParameters()
+  sim_params.enable_rendering = enable_rendering
+
+  if motor_control_mode == "TORQUE":
+    sim_params.motor_control_mode = robot_config.MotorControlMode.TORQUE
+  elif motor_control_mode == "POSITION":
+    sim_params.motor_control_mode = robot_config.MotorControlMode.POSITION
+  else:
+    print("Use TORQUE or POSITION")
+    exit()
+
+  sim_params.reset_time = 2
+  sim_params.time_step_s = time_step_s
+  sim_params.num_action_repeat = num_action_repeat
+  sim_params.enable_action_interpolation = enable_action_interpolation
+  sim_params.enable_action_filter = enable_action_filter
+  sim_params.enable_clip_motor_commands = False
+
+  if subgoal:
+    sim_params.enable_hard_reset = False
+
+  # sim_params.egl_rendering = True
+  gym_config = locomotion_gym_config.LocomotionGymConfig(
+    simulation_parameters=sim_params)
+
+  robot_class = a1.A1
+
   displacement_sensor = robot_sensors.BaseDisplacementAndRotateSensor if rotate_sensor else robot_sensors.BaseDisplacementSensor
   sensors = [
     sensor_wrappers.HistoricSensorWrapper(
       wrapped_sensor=robot_sensors.MotorAngleSensor(
-        num_motors=a1.NUM_MOTORS), num_history=3),
+        num_motors=a1.NUM_MOTORS), num_history=3
+    ),
     sensor_wrappers.HistoricSensorWrapper(
-      wrapped_sensor=robot_sensors.IMUSensor(), num_history=3),]
-
+      wrapped_sensor=robot_sensors.IMUSensor(), num_history=3
+    ),
+  ]
   if not no_displacement:
     sensors.append(
       sensor_wrappers.HistoricSensorWrapper(
-        wrapped_sensor=displacement_sensor(), num_history=3),)
+        wrapped_sensor=displacement_sensor(), num_history=3
+      ),
+    )
 
   if goal:
-    sensors.append(environment_sensors.GoalPosSensor())
+    sensors.append(
+      environment_sensors.GoalPosSensor()
+    )
 
   if add_last_action_input:
-    sensors.append(sensor_wrappers.HistoricSensorWrapper(
-      wrapped_sensor=environment_sensors.LastActionSensor(num_actions=a1.NUM_MOTORS), num_history=3))
+    sensors.append(
+      sensor_wrappers.HistoricSensorWrapper(
+        wrapped_sensor=environment_sensors.LastActionSensor(
+          num_actions=a1.NUM_MOTORS),
+        num_history=3
+      )
+    )
 
-  # terrain
   if terrain_type == "mount" or terrain_type == "hill":
     check_contact = True
-  
-  # task
   if goal:
     task = goal_task.GoalTask(
       z_constrain=z_constrain,
@@ -258,10 +289,8 @@ def build_a1_ground_env(
       target_vel=target_vel,
       check_contact=check_contact,
       subgoal_reward=subgoal_reward
+      # init_orientation=lc.INIT_ORIENTATION,
     )
-    # task = rma_task.RMATask()
-
-  # randomizer
   randomizers = []
   if domain_randomization:
     randomizer = controllable_env_randomizer_from_config.ControllableEnvRandomizerFromConfig(
@@ -287,7 +316,7 @@ def build_a1_ground_env(
   # create gym env, NOTE: parameters are set here!
   env = locomotion_gym_env_with_rich_information.LocomotionGymEnv(
     gym_config=gym_config,
-    robot_class=a1.A1,
+    robot_class=robot_class,
     robot_sensors=sensors,
     env_randomizers=randomizers,
     get_image=get_image,
@@ -333,78 +362,38 @@ def build_a1_ground_env(
 if __name__ == "__main__":
   env = build_a1_ground_env(
     motor_control_mode="POSITION",
-    z_constrain=False,
-    other_direction_penalty=0,
-    z_penalty=1,
-    clip_num=[0.05, 0.5, 0.5, 0.05, 0.5, 0.5, 0.05, 0.5, 0.5, 0.05, 0.5, 0.5],
-    enable_rendering=True,
-    diagonal_act=False,
-    num_action_repeat=16,
+    z_constrain=True,
+    other_direction_penalty=0.1,
+    clip_num=[0.1, 0.3, 0.3, 0.1, 0.3, 0.3, 0.1, 0.3, 0.3, 0.1, 0.3, 0.3],
+    res_action_scale=None,
+    enable_rendering=False,
+    diagonal_act=True,
+    add_phase_obs=10,
+    add_pose_sensor=False,
+    num_action_repeat=2,
     time_step_s=0.001,
-    add_last_action_input=True,
+    add_last_action_input=False,
+    noisy_reading=True,
+    convert_to_local_frame=False,
     enable_action_interpolation=False,
-    enable_action_filter=False,
-    domain_randomization=True,
+    mass_range=None,
+    add_motor_vel_sensor=True,
     get_image=True,
-    depth_image=False,
-    depth_norm=False,
-    grayscale=True,
-    rgbd=False,
-    fric_coeff=[0.8, 0.1, 0.1],
-    terrain_type="random_blocks_sparse",
-    alive_reward=0.1,
-    fall_reward=0,
-    target_vel=1,
-    random_init_range=0,
-    dir_update_interval=None,
-    check_contact=False,
-    random_dir=False,
-    rotate_sensor=False,
-    frame_extract=1,
-    goal=False,
-    subgoal=False,
-    goal_coeff=10,
-    subgoal_reward=None,
-    record_video=False,
-    no_displacement=False,
-    get_image_interval=1,
-    reset_frame_idx=False,
-    reset_frame_idx_each_step=False,
-    random_shape=True,
-    moving=False,
-    curriculum=False,
-    interpolation=False,
-    fixed_delay_observation=False,
+    sparse=True,
+    simple=True,
+    multiple=True
   )
   import time
-  import pybullet as p
-  from utils.record_video import create_video
-
   c_t = time.time()
   env.reset()
-  images = []
-
-  width = 256
-  height = 256
-  fov = 120
-  aspect = width / height
-  near = 0.02
-  far = 10
-  view_matrix = p.computeViewMatrix([1.75, 0, 1.0], [0, 0, 0], [0, 0, 1])
-  projection_matrix = p.computeProjectionMatrixFOV(fov, aspect, near, far)
-
-  for j in range(5000):
-    obs, _, done, _ = env.step(env.action_space.sample())
-    imgs = p.getCameraImage(width,
-                        height,
-                        view_matrix,
-                        projection_matrix)
-    _, _, img, _, _ = imgs
-    images.append(img)
-    if done:
-      print("reset")
-      env.reset()
-  create_video(images)
+  for i in range(100000000):
+    print("reset")
+    env.reset()
+    for j in range(1000):
+      _, _, done, _ = env.step(env.action_space.sample())
+      if done:
+        print("reset")
+        env.reset()
   print(time.time() - c_t)
   print(env.count_t)
   print(10000 / (time.time() - c_t))

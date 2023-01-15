@@ -18,8 +18,8 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-from envs.utilities import controllable_env_randomizer_config
-from envs.utilities import controllable_env_randomizer_base
+from vision4leg.envs.utilities import controllable_env_randomizer_config
+from vision4leg.envs.utilities import controllable_env_randomizer_base
 import tensorflow as tf
 import numpy as np
 import functools

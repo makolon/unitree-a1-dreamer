@@ -1,3 +1,4 @@
+"""A wrapper for pybullet to manage different clients."""
 from __future__ import absolute_import
 from __future__ import division
 import functools

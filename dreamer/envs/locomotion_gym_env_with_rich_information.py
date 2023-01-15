@@ -1,3 +1,18 @@
+# coding=utf-8
+# Copyright 2020 The Google Research Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""This file implements the locomotion gym env."""
 import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -163,7 +178,7 @@ class LocomotionGymEnv(gym.Env):
     if self._is_render:
       if self._record_video:
         self._pybullet_client = pybullet
-        self._pybullet_client.connect(
+        self._pybullet_client .connect(
           self._pybullet_client.GUI, options="--width=1280 --height=720 --mp4=\"test.mp4\" --mp4fps=100")
         self._pybullet_client.configureDebugVisualizer(
           self._pybullet_client.COV_ENABLE_SINGLE_STEP_RENDERING, 1)
@@ -185,12 +200,12 @@ class LocomotionGymEnv(gym.Env):
         assert self.plugin_id != -1, 'Cannot load PyBullet plugin'
         print(self.plugin_id)
 
-        self._pybullet_client.configureDebugVisualizer(
+        self.pybullet_client.configureDebugVisualizer(
           pybullet.COV_ENABLE_RENDERING, 0)
-        self._pybullet_client.configureDebugVisualizer(
+        self.pybullet_client.configureDebugVisualizer(
           pybullet.COV_ENABLE_GUI, 0)
 
-    self._pybullet_client.setAdditionalSearchPath(
+    self.pybullet_client.setAdditionalSearchPath(
       os.path.join(os.path.dirname(__file__), '../assets'))
     # if gym_config.simulation_parameters.egl_rendering:
     #   self._pybullet_client.loadPlugin('eglRendererPlugin')
@@ -376,14 +391,14 @@ class LocomotionGymEnv(gym.Env):
     if self._task and hasattr(self._task, 'reset'):
       self._task.reset(self)
 
-    self._pybullet_client.changeDynamics(
+    self.pybullet_client.changeDynamics(
       self._world_dict["ground"], -1,
       lateralFriction=self.fric_coeff[0],
       spinningFriction=self.fric_coeff[1],
       rollingFriction=self.fric_coeff[2]
     )
 
-    return self._get_observation(action=None, reward=None, done=None, reset=True)
+    return self._get_observation(reset=True)
 
   def step(self, action):
     """Step forward the simulation, given the action.
@@ -432,7 +447,7 @@ class LocomotionGymEnv(gym.Env):
     self._env_step_counter += 1
     if done:
       self._robot.Terminate()
-    return self._get_observation(action, reward, done, None), reward, done, {}
+    return self._get_observation(), reward, done, {}
 
   def render(self, mode='rgb_array'):
     if mode != 'rgb_array':
@@ -450,7 +465,7 @@ class LocomotionGymEnv(gym.Env):
       aspect=float(self._render_width) / self._render_height,
       nearVal=0.1,
       farVal=100.0)
-    (_, _, px, _, _) = self._pybullet_client.getCameraImage(
+    (_, _, px, _, _) = self.pybullet_client.getCameraImage(
       width=self._render_width,
       height=self._render_height,
       renderer=pybullet.ER_BULLET_HARDWARE_OPENGL,
@@ -509,8 +524,9 @@ class LocomotionGymEnv(gym.Env):
       return self._task(self)
     return 0
 
-  def _get_observation(self, action, reward, done, reset=False):
+  def _get_observation(self, reset=False):
     """Get observation of this environment from a list of sensors.
+
     Returns:
       observations: sensory observation in the numpy array format
     """
@@ -545,16 +561,16 @@ class LocomotionGymEnv(gym.Env):
         ).reshape(-1)
         return observations
 
-      linkstate = self._pybullet_client.getLinkState(
+      linkstate = self.pybullet_client.getLinkState(
         self.robot.quadruped, 0, computeForwardKinematics=True)
-      camInfo = self._pybullet_client.getDebugVisualizerCamera()
+      camInfo = self.pybullet_client.getDebugVisualizerCamera()
       proj_mat = camInfo[3]
       proj_mat = [
         1.0825318098068237, 0.0, 0.0, 0.0, 0.0, 1.732050895690918, 0.0, 0.0, 0.0, 0.0,
         -1.0002000331878662, -1.0, 0.0, 0.0, -0.020002000033855438, 0.0
       ]
       camOrn = linkstate[1]
-      camMat = self._pybullet_client.getMatrixFromQuaternion(camOrn)
+      camMat = self.pybullet_client.getMatrixFromQuaternion(camOrn)
       forwardVec = [camMat[0], camMat[3],
                     camMat[6]]
       camPos = linkstate[0]
@@ -583,18 +599,18 @@ class LocomotionGymEnv(gym.Env):
         forwardVec[2] = 0
 
       camTarget2 = [camPos[i] + forwardVec2[i] * 10 for i in range(3)]
-      viewMat2 = self._pybullet_client.computeViewMatrix(
+      viewMat2 = self.pybullet_client.computeViewMatrix(
         camPos, camTarget2, camUpVec2
       )
 
-      camera_image_set = self._pybullet_client.getCameraImage(
+      camera_image_set = self.pybullet_client.getCameraImage(
         64, 64, viewMatrix=viewMat2, projectionMatrix=proj_mat,
         # flags=pybullet.ER_NO_SEGMENTATION_MASK,
         shadow=1,
         lightDirection=[1, 1, 1],
         renderer=pybullet.ER_BULLET_HARDWARE_OPENGL,
       )
-      _, _, rgbd_img, depth_img, seg_img = camera_image_set
+      _, _, _, depth_img, _ = camera_image_set
 
       depth = depth_img[np.newaxis, ...]
       if self.depth_image:
@@ -692,6 +708,7 @@ class LocomotionGymEnv(gym.Env):
 
   def get_time_since_reset(self):
     """Get the time passed (in seconds) since the last reset.
+
     Returns:
       Time in seconds since the last reset.
     """
