@@ -20,6 +20,7 @@ def main(env_id='MiniGrid-MazeS11N-v0',
          env_no_terminal=False,
          env_time_limit=0,
          env_action_repeat=16,
+         ego_centric=False
          ):
 
     # Env
@@ -39,24 +40,26 @@ def main(env_id='MiniGrid-MazeS11N-v0',
     view_matrix = p.computeViewMatrix([1.75, 0, 1.0], [0, 0, 0], [0, 0, 1])
     projection_matrix = p.computeProjectionMatrixFOV(fov, aspect, near, far)
 
-    images = []
+    env_images = []
+    ego_images = []
     while True:
         start_time = time.time()
         action = env.action_space.sample()
-        obs, reward, done, inf = env.step(action)
+        obs, reward, done, info = env.step(action)
         imgs = p.getCameraImage(width,
                             height,
                             view_matrix,
                             projection_matrix)
-        _, _, img, _, _ = imgs
-        img = obs['image']
-        images.append(img)
+        _, _, rgba_img, dep_img, _ = imgs
+        env_images.append(rgba_img[:, :, :3])
+        ego_images.append(obs['image'])
         steps += 1
         print('steps: ', steps)
         print('fps: ', 1.0 / (time.time() - start_time))
-        if steps > 1000:
+        if steps >= 1000:
             break
-    create_video(images, 64, 64)
+    create_video(env_images, width, height, 'env.mp4')
+    create_video(ego_images, 64, 64, 'ego.mp4')
 
 
 if __name__ == '__main__':
