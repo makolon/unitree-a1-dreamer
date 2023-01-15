@@ -246,20 +246,20 @@ def build_a1_ground_env(
       subgoal=subgoal
     )
   else:
-    # task = move_forward_task.MoveForwardTask(
-    #   z_constrain=z_constrain,
-    #   other_direction_penalty=other_direction_penalty,
-    #   z_penalty=z_penalty,
-    #   num_action_repeat=num_action_repeat,
-    #   time_step_s=time_step_s,
-    #   height_fall_coeff=0.2,
-    #   alive_reward=alive_reward,
-    #   fall_reward=fall_reward,
-    #   target_vel=target_vel,
-    #   check_contact=check_contact,
-    #   subgoal_reward=subgoal_reward
-    # )
-    task = rma_task.RMATask()
+    task = move_forward_task.MoveForwardTask(
+      z_constrain=z_constrain,
+      other_direction_penalty=other_direction_penalty,
+      z_penalty=z_penalty,
+      num_action_repeat=num_action_repeat,
+      time_step_s=time_step_s,
+      height_fall_coeff=0.2,
+      alive_reward=alive_reward,
+      fall_reward=fall_reward,
+      target_vel=target_vel,
+      check_contact=check_contact,
+      subgoal_reward=subgoal_reward
+    )
+    # task = rma_task.RMATask()
 
   # randomizer
   randomizers = []

@@ -662,7 +662,7 @@ class LocomotionGymEnv(gym.Env):
     for key, val in sensors_dict.items():
       obs_dict[key] = val
 
-    obs_dict['image'] = rgbd_img[:, :, :3]
+    obs_dict['image'] = depth_img # rgba_img[:, :, :3]
     return obs_dict
 
   def set_time_step(self, num_action_repeat, sim_step=0.001):

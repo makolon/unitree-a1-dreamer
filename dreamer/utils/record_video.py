@@ -3,9 +3,9 @@ import numpy as np
 
 img_size = (256, 256)
 
-def create_video(images, width, height):
+def create_video(images, width, height, video_name):
     fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
-    writer = cv2.VideoWriter('sample.mp4', fourcc, 20, (width, height))
+    writer = cv2.VideoWriter(video_name, fourcc, 20, (width, height))
     for i in range(len(images)):
         img = images[i]
         img_np = np.array(img).astype('uint8')
